@@ -94,6 +94,8 @@ if __name__ == '__main__':
                         help='number of processes to run. default: cpu_count')
     parser.add_argument('--vad', type=int, default=0,
                         help='apply vad to wav file. yes(1) or no(0, default)')
+    parser.add_argument('--train_amt', type=int, default=4,
+                        help='specify the amount of mixed train data (default is 4, equal to 10**4)')
     args = parser.parse_args()
 
     os.makedirs(args.out_dir, exist_ok=True)
@@ -147,7 +149,7 @@ if __name__ == '__main__':
         s2 = random.choice(spk2)
         mix(hp, args, audio, num, s1_dvec, s1_target, s2, train=False)
 
-    arr = list(range(10**5))
+    arr = list(range(10**arg.train_amt))
     with Pool(cpu_num) as p:
         r = list(tqdm.tqdm(p.imap(train_wrapper, arr), total=len(arr)))
 
