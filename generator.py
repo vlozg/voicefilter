@@ -149,7 +149,7 @@ if __name__ == '__main__':
         s2 = random.choice(spk2)
         mix(hp, args, audio, num, s1_dvec, s1_target, s2, train=False)
 
-    arr = list(range(10**arg.train_amt))
+    arr = list(range(10**args.train_amt))
     with Pool(cpu_num) as p:
         r = list(tqdm.tqdm(p.imap(train_wrapper, arr), total=len(arr)))
 
