@@ -4,6 +4,7 @@ import tqdm
 import torch
 import random
 import librosa
+import soundfile
 import argparse
 import numpy as np
 from multiprocessing import Pool, cpu_count
@@ -62,8 +63,8 @@ def mix(hp, args, audio, num, s1_dvec, s1_target, s2, train):
     # save vad & normalized wav files
     target_wav_path = formatter(dir_, hp.form.target.wav, num)
     mixed_wav_path = formatter(dir_, hp.form.mixed.wav, num)
-    librosa.output.write_wav(target_wav_path, w1, srate)
-    librosa.output.write_wav(mixed_wav_path, mixed, srate)
+    soundfile.write(target_wav_path, w1, srate)
+    soundfile.write(mixed_wav_path, mixed, srate)
 
     # save magnitude spectrograms
     target_mag, _ = audio.wav2spec(w1)
