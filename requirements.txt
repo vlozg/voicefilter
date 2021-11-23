@@ -1,8 +1,9 @@
 tqdm
 numpy
-torch==1.0.1
+torch<=1.10.0
 pyyaml
 librosa
+soundfile
 mir_eval
 matplotlib
 tensorboardX
