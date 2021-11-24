@@ -56,4 +56,4 @@ if __name__ == '__main__':
     trainloader = create_dataloader(hp, args, train=True)
     testloader = create_dataloader(hp, args, train=False)
 
-    train(args, pt_dir, chkpt_path, trainloader, testloader, writer, logger, hp, hp_str)
+    train(args, pt_dir, chkpt_path, trainloader, testloader, writer, logger, hp, hp_str, log_dir)

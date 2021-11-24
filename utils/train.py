@@ -9,9 +9,11 @@ from .audio import Audio
 from .evaluation import validate
 from model.model import VoiceFilter
 from model.embedder import SpeechEmbedder
+from .power_law_loss import PowerLawCompLoss
+from .gdrive import GDrive
 
 
-def train(args, pt_dir, chkpt_path, trainloader, testloader, writer, logger, hp, hp_str):
+def train(args, pt_dir, chkpt_path, trainloader, testloader, writer, logger, hp, hp_str, log_dir):
     # load embedder
     embedder_pt = torch.load(args.embedder_path)
     embedder = SpeechEmbedder(hp).cuda()
@@ -30,6 +32,8 @@ def train(args, pt_dir, chkpt_path, trainloader, testloader, writer, logger, hp,
     else:
         raise Exception("%s optimizer not supported" % hp.train.optimizer)
 
+    drive = GDrive()
+
     step = 0
 
     if chkpt_path is not None:
@@ -46,7 +50,8 @@ def train(args, pt_dir, chkpt_path, trainloader, testloader, writer, logger, hp,
         logger.info("Starting new training run")
 
     try:
-        criterion = nn.MSELoss()
+        # criterion = nn.MSELoss()
+        criterion = PowerLawCompLoss()
         while True:
             model.train()
             for dvec_mels, target_mag, mixed_mag in trainloader:
@@ -85,6 +90,7 @@ def train(args, pt_dir, chkpt_path, trainloader, testloader, writer, logger, hp,
 
                 # 1. save checkpoint file to resume training
                 # 2. evaluate and save sample to tensorboard
+                # backup brrrrrrrrrrrrrrrrrrrrrrrrrrrrrr
                 if step % hp.train.checkpoint_interval == 0:
                     save_path = os.path.join(pt_dir, 'chkpt_%d.pt' % step)
                     torch.save({
@@ -95,6 +101,12 @@ def train(args, pt_dir, chkpt_path, trainloader, testloader, writer, logger, hp,
                     }, save_path)
                     logger.info("Saved checkpoint to: %s" % save_path)
                     validate(audio, model, embedder, testloader, writer, step)
+
+                    drive.Upload(save_path, "1sWAUt5vfyD97Cq85J8_zuwMeX4tmfEiZ")
+                    # Nén file
+                    os.system(f'zip -j ./tensorboard.zip ./{log_dir}/*')
+                    drive.Upload('tensorboard.zip', "1sWAUt5vfyD97Cq85J8_zuwMeX4tmfEiZ")
+                    
     except Exception as e:
         logger.info("Exiting due to exception: %s" % e)
         traceback.print_exc()

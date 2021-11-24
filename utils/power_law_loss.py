@@ -20,7 +20,7 @@ class PowerLawCompLoss(nn.Module):
     input = torch.pow(input, self.power)
     target = torch.pow(target, self.power)
     
-    magnitude_loss = l2_norm(torch.abs(input), torch.abs(target))
-    complex_loss = l2_norm(input, target)
+    magnitude_loss = self.l2_norm(torch.abs(input), torch.abs(target))
+    complex_loss = self.l2_norm(input, target)
     
     return magnitude_loss + self.alpha * complex_loss

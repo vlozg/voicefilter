@@ -1,10 +1,13 @@
 tqdm
 numpy
-torch<=1.10.0
+torch==1.10.0
 pyyaml
-librosa
+librosa==0.8.1
 soundfile
 mir_eval
 matplotlib
 tensorboardX
 Pillow
+PyDrive2==1.10.0
+
+neptune-client
