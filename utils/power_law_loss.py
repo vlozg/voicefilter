@@ -13,7 +13,7 @@ class PowerLawCompLoss(nn.Module):
     super(PowerLawCompLoss, self).__init__()
     self.power = power
     self.alpha = complex_loss_ratio
-    l2_norm = nn.MSELoss(reduction=reduction)
+    self.l2_norm = nn.MSELoss(reduction=reduction)
     
   def forward(self, input: Tensor, target: Tensor) -> Tensor:
     # power-law compress

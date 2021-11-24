@@ -9,5 +9,4 @@ matplotlib
 tensorboardX
 Pillow
 PyDrive2==1.10.0
-
 neptune-client
