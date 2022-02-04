@@ -118,3 +118,6 @@ embedder.pt
 
 # Datasets folder
 datasets/*/
+
+# VSCode config
+.vscode/
