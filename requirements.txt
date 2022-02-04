@@ -1,12 +1,13 @@
 tqdm
 numpy
-torch==1.8.0
-pyyaml
+torch>=1.10.0
+pyyaml==5.4.1
 librosa==0.8.1
 soundfile
 mir_eval
 matplotlib
 tensorboardX
 Pillow
+
 PyDrive2==1.10.0
-neptune-client
+gdown
