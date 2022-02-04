@@ -9,6 +9,7 @@
 from pydrive2.auth import GoogleAuth
 from pydrive2.drive import GoogleDrive
 from oauth2client.client import GoogleCredentials
+from pathlib import Path
 
 class GDrive():
     def __init__(self, 
@@ -36,35 +37,52 @@ class GDrive():
 
         self._drive = GoogleDrive(self._gauth)
 
-    def SearchInFolder(self, parent_id, file_name):
-        return self._drive.ListFile({'q': f"'{parent_id}' in parents and title = '{file_name}'"}).GetList()
-
     def CreateFile(self, file_name=None, parent_id=None):
         file = self._drive.CreateFile({'title': file_name, 
                                        'parents': [{'id': parent_id}]})
         return file
 
-    def Upload(self, file_path, parent_id, file_name=None):
+    def CreateFolder(self, folder_name=None, parent_id=None):
+        folder = self._drive.CreateFile({'title': folder_name, 
+                                       'parents': [{'id': parent_id}],
+                                       'mimeType': 'application/vnd.google-apps.folder'})
+        folder.Upload()
+        return folder
+
+    def UploadFile(self, file_path, parent_id, file_name=None):
+        file_path = Path(file_path)
         if file_name == None:
-          file_name = file_path.split('/')[-1]
-        # Kiểm tra file tồn tại
-        file_list = self.SearchInFolder(parent_id, file_name)
-        if len(file_list) > 1:
-          for file in file_list:
-            print('title: %s, id: %s' % (file['title'], file['id']))
-          raise NameError('More than 1 file with same name exist, please resolve this')
-        
-        elif len(file_list) == 0:
-          # File chưa có thì tạo mới
-          file = self.CreateFile(file_name, parent_id)
-        else:
-          # Tồn tại duy nhất 1 file
-          file = file_list[0]
-        
-        file.SetContentFile(file_path)
+          file_name = file_path.name
+        file = self.GetSingleFile(file_name, parent_id, True)
+        file.SetContentFile(str(file_path))
         file.Upload()
 
-    def Download(self, file_name, parent_id):
+    def DownloadFile(self, file_name, parent_id):
+        file = self.GetSingleFile(file_name, parent_id)    
+        file.GetContentFile(file_name)
+
+    def UploadFolder(self, folder_path, parent_id, folder_name=None, child_only=False):
+        folder_path = Path(folder_path)
+        id_map = {}
+        if not child_only:
+            folder = self.CreateFolder(folder_path.name, parent_id)
+            id_map[str(folder_path)] = folder["id"]
+        else:
+            id_map[str(folder_path)] = parent_id
+
+        for f in folder_path.rglob("*"):
+            if f.is_dir():
+                folder = self.CreateFolder(f.name,  id_map[str(f.parent)])
+                id_map[str(f)] = folder["id"]
+            else:
+                self.UploadFile(f, id_map[str(f.parent)])
+
+
+#########################################################################################
+    def SearchInFolder(self, parent_id, file_name):
+        return self._drive.ListFile({'q': f"'{parent_id}' in parents and title = '{file_name}' and trashed=false"}).GetList()
+
+    def GetSingleFile(self, file_name, parent_id, auto_create=False, is_folder=False):
         # Kiểm tra file tồn tại
         file_list = self.SearchInFolder(parent_id, file_name)
         if len(file_list) > 1:
@@ -72,9 +90,13 @@ class GDrive():
                 print('title: %s, id: %s' % (file['title'], file['id']))
             raise NameError('More than 1 file with same name exist, please resolve this')
         elif len(file_list) == 0:
-            raise NameError(f'File named {file_name} not exist')
-        else:
-            # Tồn tại duy nhất 1 file
-            file = file_list[0]
-        
-        file.GetContentFile(file_name)
+            if auto_create:
+                # File chưa có thì tạo mới
+                if is_folder:
+                    return self.CreateFolder(file_name, parent_id)
+                else:
+                    return self.CreateFile(file_name, parent_id)
+            else:
+                raise NameError(f'File named {file_name} not exist')
+        # Tồn tại duy nhất 1 file
+        return file_list[0]

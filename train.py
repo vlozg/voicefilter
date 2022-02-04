@@ -3,7 +3,7 @@ import time
 import logging
 import argparse
 
-from utils.train import train
+from utils.trainer import trainer
 from utils.hparams import HParam
 from utils.writer import MyWriter
 from datasets.dataloader import create_dataloader
@@ -14,7 +14,7 @@ if __name__ == '__main__':
     parser.add_argument('-b', '--base_dir', type=str, default='.',
                         help="Root directory of run.")
     parser.add_argument('-c', '--config', type=str, required=True,
-                        help="yaml file for configuration")
+                        help="folder contain yaml files for configuration")
     parser.add_argument('-e', '--embedder_path', type=str, required=True,
                         help="path of embedder model pt file")
     parser.add_argument('--checkpoint_path', type=str, default=None,
@@ -56,4 +56,4 @@ if __name__ == '__main__':
     trainloader = create_dataloader(hp, args, train=True)
     testloader = create_dataloader(hp, args, train=False)
 
-    train(args, pt_dir, chkpt_path, trainloader, testloader, writer, logger, hp, hp_str, log_dir)
+    trainer(args, pt_dir, chkpt_path, trainloader, testloader, writer, logger, hp, hp_str, log_dir)

@@ -22,7 +22,15 @@ class Audio():
         return mel
 
     def wav2spec(self, y):
-        D = self.stft(y)
+        D = self._stft(y)
+        S = self.amp_to_db(np.abs(D)) - self.hp.audio.ref_level_db
+        S, D = self.normalize(S), np.angle(D)
+        S, D = S.T, D.T # to make [time, freq]
+        return S, D
+
+    def stft2spec(self, D, pow_decomp=False):
+        if pow_decomp:
+            D = np.log(D) / np.log(0.3)
         S = self.amp_to_db(np.abs(D)) - self.hp.audio.ref_level_db
         S, D = self.normalize(S), np.angle(D)
         S, D = S.T, D.T # to make [time, freq]
@@ -36,16 +44,31 @@ class Audio():
         S = self.db_to_amp(self.denormalize(spectrogram) + self.hp.audio.ref_level_db)
         return self.istft(S, phase)
 
-    def stft(self, y):
-        return librosa.stft(y=y, n_fft=self.hp.audio.n_fft,
-                            hop_length=self.hp.audio.hop_length,
-                            win_length=self.hp.audio.win_length)
+    def _stft(self, y, pow_comp=False):
+        if pow_comp:
+            return librosa.stft(y=y, n_fft=self.hp.audio.n_fft,
+                                hop_length=self.hp.audio.hop_length,
+                                win_length=self.hp.audio.win_length) ** 0.3
+        else:
+            return librosa.stft(y=y, n_fft=self.hp.audio.n_fft,
+                                hop_length=self.hp.audio.hop_length,
+                                win_length=self.hp.audio.win_length)
 
     def istft(self, mag, phase):
         stft_matrix = mag * np.exp(1j*phase)
         return librosa.istft(stft_matrix,
                              hop_length=self.hp.audio.hop_length,
                              win_length=self.hp.audio.win_length)
+                             
+    def _istft(self, s, pow_decomp=False):
+        if pow_decomp:
+            return librosa.istft(np.log(s) / np.log(0.3),
+                                hop_length=self.hp.audio.hop_length,
+                                win_length=self.hp.audio.win_length)
+        else:
+            return librosa.istft(s,
+                                hop_length=self.hp.audio.hop_length,
+                                win_length=self.hp.audio.win_length)
 
     def amp_to_db(self, x):
         return 20.0 * np.log10(np.maximum(1e-5, x))
