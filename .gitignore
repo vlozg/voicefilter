@@ -112,3 +112,9 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+client_secrets.json
+credentials.json
+embedder.pt
+
+# Datasets folder
+datasets/*/
