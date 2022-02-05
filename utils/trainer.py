@@ -56,10 +56,13 @@ def trainer(args, pt_dir, chkpt_path, trainloader, testloader, writer, logger, h
         criterion = PowerLawCompLoss()
         while True:
             model.train()
-            for dvec_mels, mixed_mag, target_stft, mixed_stft in trainloader:
+            for dvec_mels, target_mag, target_phase, mixed_mag, mixed_phase, target_stft, mixed_stft in trainloader:
                 target_stft = target_stft.cuda()
                 mixed_stft = mixed_stft.cuda()
-                mixed_mag = mixed_mag.cuda()
+                # mixed_mag = mixed_mag.cuda()
+                # mixed_phase = mixed_phase.cuda()
+                # target_mag = target_mag.cuda()
+                # target_phase = target_phase.cuda()
 
                 dvec_list = list()
                 for mel in dvec_mels:
@@ -69,12 +72,11 @@ def trainer(args, pt_dir, chkpt_path, trainloader, testloader, writer, logger, h
                 dvec = torch.stack(dvec_list, dim=0)
                 dvec = dvec.detach()
 
-                mask = model(mixed_mag, dvec)
-                output = mixed_stft*mask
+                # mask = model(mixed_mag, dvec)
+                mask = model(torch.pow(mixed_stft.abs(), 0.3), dvec)
+                # output = mixed_mag*mask
 
-                # For normal MSE loss
-                # loss = criterion(output.real, target_spec.real)
-                loss = criterion(output, target_stft)
+                loss = criterion(mask, mixed_stft, target_stft)
 
                 loss.backward()
                 accum_loss += loss.item()

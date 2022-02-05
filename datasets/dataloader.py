@@ -22,17 +22,29 @@ def create_dataloader(hp, args, train):
         target_stft_list = list()
         mixed_stft_list = list()
         mixed_mag_list = list()
+        target_mag_list = list()
+        mixed_phase_list = list()
+        target_phase_list = list()
+        
 
-        for dvec_mel, _, _, mixed_mag, target_stft, mixed_stft in batch:
+        for dvec_mel, _, _, mixed_mag, mixed_phase, target_mag, target_phase, target_stft, mixed_stft in batch:
             dvec_list.append(dvec_mel)
             target_stft_list.append(target_stft)
             mixed_stft_list.append(mixed_stft)
             mixed_mag_list.append(mixed_mag)
+            mixed_phase_list.append(mixed_phase)
+            target_mag_list.append(target_mag)
+            target_phase_list.append(target_phase)
         target_stft_list = torch.stack(target_stft_list, dim=0)
         mixed_stft_list = torch.stack(mixed_stft_list, dim=0)
         mixed_mag_list = torch.stack(mixed_mag_list, dim=0)
+        mixed_phase_list = torch.stack(mixed_phase_list, dim=0)
+        target_mag_list = torch.stack(target_mag_list, dim=0)
+        target_phase_list = torch.stack(target_phase_list, dim=0)
 
-        return dvec_list, mixed_mag_list, target_stft_list, mixed_stft_list
+        return dvec_list, mixed_mag_list, mixed_phase_list, \
+            target_mag_list, target_phase_list, \
+            target_stft_list, mixed_stft_list
 
     def test_collate_fn(batch):
         return batch
@@ -162,13 +174,14 @@ class VFDataset(Dataset):
         dvec_mel = torch.from_numpy(dvec_mel).float()
 
         # magnitude spectrograms (old)
-        # target_mag, target_phase = self.audio.wav2spec(w1)
+        target_mag, target_phase = self.audio.wav2spec(w1)
         mixed_mag, mixed_phase = self.audio.wav2spec(mixed)
         # STFT, must transpose to get [time, freq] format
-        target_stft = self.audio._stft(w1).T
-        mixed_stft = self.audio._stft(mixed).T
+        target_stft = self.audio.stft(w1).T
+        mixed_stft = self.audio.stft(mixed).T
         
         return dvec_mel, w1, mixed, \
-            torch.from_numpy(mixed_mag), \
+            torch.from_numpy(target_mag), torch.from_numpy(target_phase), \
+            torch.from_numpy(mixed_mag), torch.from_numpy(mixed_phase), \
             torch.from_numpy(target_stft), \
             torch.from_numpy(mixed_stft)

@@ -16,16 +16,19 @@ def validate(audio, model, embedder, testloader, writer, step):
         sdrs = []
         saved_sample = None
         for batch in testloader:
-            dvec_mel, target_wav, mixed_wav, _, target_stft, mixed_stft = batch[0]
+            dvec_mel, target_wav, mixed_wav, _, _, mixed_mag, _, target_stft, mixed_stft = batch[0]
             dvec_mel = dvec_mel.cuda()
             target_stft = target_stft.unsqueeze(0).cuda()
             mixed_stft = mixed_stft.unsqueeze(0).cuda()
+            # mixed_mag = mixed_mag.unsqueeze(0).cuda()
 
             dvec = embedder(dvec_mel)
             dvec = dvec.unsqueeze(0)
-            est_mask = model(mixed_stft.abs(), dvec)
+            # est_mask = model(mixed_mag, dvec)
+            est_mask = model(torch.pow(mixed_stft.abs(), 0.3), dvec)
+            test_losses.append(criterion(est_mask, mixed_stft, target_stft).item())
+            est_mask = torch.pow(est_mask, 10/3)
             est_stft = mixed_stft * est_mask
-            test_losses.append(criterion(target_stft, est_stft).item())
 
             mixed_stft = mixed_stft[0].T.cpu().detach().numpy()
             target_stft = target_stft[0].T.cpu().detach().numpy()
