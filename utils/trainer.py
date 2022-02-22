@@ -13,9 +13,9 @@ from .power_law_loss import PowerLawCompLoss
 from .gdrive import GDrive
 
 
-def trainer(args, pt_dir, chkpt_path, trainloader, testloader, writer, logger, hp, hp_str, log_dir):
+def trainer(args, pt_dir, chkpt_path, trainloader, testloader, writer, logger, hp, hp_str):
     # load embedder
-    embedder_pt = torch.load(args.embedder_path)
+    embedder_pt = torch.load(args.embedder_path, "cpu")
     embedder = SpeechEmbedder(hp).cuda()
     embedder.load_state_dict(embedder_pt)
     embedder.eval()
@@ -40,7 +40,7 @@ def trainer(args, pt_dir, chkpt_path, trainloader, testloader, writer, logger, h
 
     if chkpt_path is not None:
         logger.info("Resuming from checkpoint: %s" % chkpt_path)
-        checkpoint = torch.load(chkpt_path)
+        checkpoint = torch.load(chkpt_path, "cpu")
         model.load_state_dict(checkpoint['model'])
         optimizer.load_state_dict(checkpoint['optimizer'])
         step = checkpoint['step']
@@ -100,10 +100,6 @@ def trainer(args, pt_dir, chkpt_path, trainloader, testloader, writer, logger, h
                     accum = 0
                     step += 1
                     accum_loss /= hp["train"]["grad_accumulate"]
-                    
-                    # if accum_loss > 1e8 or math.isnan(accum_loss):
-                    #     logger.error("Loss exploded to %.02f at step %d!" % (accum_loss, step))
-                    #     raise Exception("Loss exploded")
 
                     # write loss to tensorboard
                     if step % hp.train.summary_interval == 0:
@@ -124,7 +120,7 @@ def trainer(args, pt_dir, chkpt_path, trainloader, testloader, writer, logger, h
                             'hp_str': hp_str,
                         }, save_path)
                         logger.info("Saved checkpoint to: %s" % save_path)
-                        validate(audio, model, embedder, testloader, writer, step)
+                        validate(audio, model, embedder, testloader, writer, logger, step)
 
                         # drive.Upload(save_path, "1sWAUt5vfyD97Cq85J8_zuwMeX4tmfEiZ")
                         # # Nén file
