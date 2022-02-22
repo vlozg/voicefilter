@@ -14,6 +14,7 @@ class PowerLawCompLoss(nn.Module):
     self.power = power
     self.alpha = complex_loss_ratio
     self.l2_norm = nn.MSELoss(reduction=reduction)
+    # self.l1_norm = nn.L1Loss(reduction=reduction)
     
   def forward(self, mask, input: Tensor, target: Tensor) -> Tensor:    
     input = mask*torch.pow(input, self.power)
@@ -21,4 +22,5 @@ class PowerLawCompLoss(nn.Module):
     magnitude_loss = self.l2_norm(input.abs(), target.abs())
     # MSE doesn't support complex number yet
     complex_loss = ((input - target).abs()**2).mean()
+    # complex_loss = (input - target).abs().mean()
     return magnitude_loss + self.alpha * complex_loss
