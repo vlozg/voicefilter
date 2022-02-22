@@ -21,11 +21,11 @@ class SpeechEmbedder(nn.Module):
         self.proj = LinearNorm(hp)
         self.hp = hp
 
-    def forward(self, mel):
+    def forward(self, x):
         # (num_mels, T)
-        mels = mel.unfold(1, self.hp.embedder.window, self.hp.embedder.stride) # (num_mels, T', window)
-        mels = mels.permute(1, 2, 0) # (T', window, num_mels)
-        x, _ = self.lstm(mels) # (T', window, lstm_hidden)
+        x = x.unfold(1, self.hp.embedder.window, self.hp.embedder.stride) # (num_mels, T', window)
+        x = x.permute(1, 2, 0) # (T', window, num_mels)
+        x, _ = self.lstm(x) # (T', window, lstm_hidden)
         x = x[:, -1, :] # (T', lstm_hidden), use last frame only
         x = self.proj(x) # (T', emb_dim)
         x = x / torch.norm(x, p=2, dim=1, keepdim=True) # (T', emb_dim)
