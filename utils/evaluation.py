@@ -5,7 +5,7 @@ from mir_eval.separation import bss_eval_sources
 from .power_law_loss import PowerLawCompLoss
 
 
-def validate(audio, model, embedder, testloader, writer, step):
+def validate(audio, model, embedder, testloader, writer, logger, step):
     model.eval()
     
     # criterion = nn.MSELoss()
@@ -16,7 +16,7 @@ def validate(audio, model, embedder, testloader, writer, step):
         sdrs = []
         saved_sample = None
         for batch in testloader:
-            dvec_mel, target_wav, mixed_wav, _, _, mixed_mag, _, target_stft, mixed_stft = batch[0]
+            _, _, _, dvec_mel, target_wav, mixed_wav, _, _, mixed_mag, _, target_stft, mixed_stft = batch[0]
             dvec_mel = dvec_mel.cuda()
             target_stft = target_stft.unsqueeze(0).cuda()
             mixed_stft = mixed_stft.unsqueeze(0).cuda()
@@ -47,11 +47,14 @@ def validate(audio, model, embedder, testloader, writer, step):
                 first = False
         
         test_loss = np.array(test_losses).mean()
-        sdr = np.array(sdrs).mean()
+        sdr_mean = np.array(sdrs).mean()
+        sdr_med = np.median(np.array(sdrs))
         mixed_wav, target_wav, est_wav, mixed_mag, target_mag, est_mag, est_mask = saved_sample
-        writer.log_evaluation(test_loss, sdr,
+        writer.log_evaluation(test_loss, sdr_mean, sdr_med,
                                 mixed_wav, target_wav, est_wav,
                                 mixed_mag, target_mag, est_mag, est_mask,
                                 step)
+        logger.info(f"Complete evaluate at step {step}")
+        logger.info(f"- Test SDR mean: {sdr_mean}\t Test SDR median: {sdr_med}")
 
     model.train()
