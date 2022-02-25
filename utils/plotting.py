@@ -9,10 +9,12 @@ def fig2np(fig):
     data = data.reshape(fig.canvas.get_width_height()[::-1] + (3,))
     return data
 
-def plot_spectrogram_to_numpy(spectrogram):
+def plot_spectrogram_to_numpy(spectrogram, range=None):
     fig, ax = plt.subplots(figsize=(12, 3))
     im = ax.imshow(spectrogram, aspect='auto', origin='lower',
                    interpolation='none')
+    if range:
+        im.set_clim(vmin=range[0], vmax=range[1])
     plt.colorbar(im, ax=ax)
     plt.xlabel('Frames')
     plt.ylabel('Channels')
