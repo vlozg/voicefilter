@@ -34,29 +34,33 @@ class Audio():
         S, D = S.T, D.T # to make [time, freq]
         return S, D
 
-    def spec2wav(self, spectrogram, phase):
+    def spec2wav(self, spectrogram, phase, length=None):
         spectrogram, phase = spectrogram.T, phase.T
         # used during inference only
         # spectrogram: enhanced output
         # phase: use noisy input's phase, so no GLA is required
         S = self.db_to_amp(self.denormalize(spectrogram) + self.hp.audio.ref_level_db)
-        return self.istft(S, phase)
+        return self.istft(S, phase, length)
 
     def stft(self, y):
         return librosa.stft(y=y, n_fft=self.hp.audio.n_fft,
                             hop_length=self.hp.audio.hop_length,
                             win_length=self.hp.audio.win_length)
 
-    def istft(self, mag, phase):
+    def istft(self, mag, phase, length=None):
         stft_matrix = mag * np.exp(1j*phase)
-        return librosa.istft(stft_matrix,
-                             hop_length=self.hp.audio.hop_length,
-                             win_length=self.hp.audio.win_length)
+        return self._istft(stft_matrix, length)
 
-    def _istft(self, stft_matrix):
-        return librosa.istft(stft_matrix,
-                             hop_length=self.hp.audio.hop_length,
-                             win_length=self.hp.audio.win_length)
+    def _istft(self, stft_matrix, length=None):
+        if length:
+            return librosa.istft(stft_matrix,
+                                hop_length=self.hp.audio.hop_length,
+                                win_length=self.hp.audio.win_length,
+                                length=length)
+        else:
+            return librosa.istft(stft_matrix,
+                                hop_length=self.hp.audio.hop_length,
+                                win_length=self.hp.audio.win_length)
 
     def amp_to_db(self, x):
         return 20.0 * np.log10(np.maximum(1e-5, x))
