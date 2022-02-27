@@ -31,6 +31,19 @@ def job_to16khz(d):
     with Pool(cpu_num) as p:
         r = list(tqdm.tqdm(p.imap(resample, wav_list), total=len(wav_list)))
 
+########### Remove 16k_ prefix job ############
+def remove16kprefix(p, sr=16000):
+        if (p.name[:3] != "16k"):
+            return
+        new_path = Path.joinpath(p.parent, p.name[4:])
+        p.rename(new_path)
+
+def job_remove16kprefix(d):
+    wav_list=list(Path(d).rglob("*.wav"))
+    cpu_num = cpu_count()
+    with Pool(cpu_num) as p:
+        r = list(tqdm.tqdm(p.imap(remove16kprefix, wav_list), total=len(wav_list)))
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-j', '--job', type=str, required=True,
@@ -43,3 +56,5 @@ if __name__ == '__main__':
         job_m4a2wav(args.directory)
     elif args.job == "to16khz":
         job_to16khz(args.directory)
+    elif args.job == "remove16kprefix":
+        job_remove16kprefix(args.directory)
