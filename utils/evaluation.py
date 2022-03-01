@@ -16,7 +16,7 @@ def validate(audio, model, embedder, testloader, writer, logger, step):
         sdrs = []
         saved_sample = None
         for batch in testloader:
-            _, _, _, dvec_mel, target_wav, mixed_wav, _, _, mixed_mag, _, target_stft, mixed_stft = batch[0]
+            _, _, _, dvec_mel, target_wav, mixed_wav, _, _, _, _, target_stft, mixed_stft, *_ = batch[0]
             dvec_mel = dvec_mel.cuda()
             target_stft = target_stft.unsqueeze(0).cuda()
             mixed_stft = mixed_stft.unsqueeze(0).cuda()
