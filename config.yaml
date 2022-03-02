@@ -13,6 +13,7 @@ model:
   lstm_dim: 400
   fc1_dim: 600
   fc2_dim: 601 # num_freq
+  bidirection: False
 ---
 data:
   libri_dir: 'datasets/LibriSpeech'
@@ -32,7 +33,7 @@ train:
     initial: 0.001
     final: 0.05
   summary_interval: 1
-  grad_accumulate: 12
+  grad_accumulate: 4
   checkpoint_interval: 3000
 ---
 log:

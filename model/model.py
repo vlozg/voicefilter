@@ -55,9 +55,10 @@ class VoiceFilter(nn.Module):
             8*hp.audio.num_freq + hp.embedder.emb_dim,
             hp.model.lstm_dim,
             batch_first=True,
-            bidirectional=True)
+            bidirectional=hp.model.bidirection)
 
-        self.fc1 = nn.Linear(2*hp.model.lstm_dim, hp.model.fc1_dim)
+        lstm_dim = 2*hp.model.lstm_dim if hp.model.bidirection else hp.model.lstm_dim
+        self.fc1 = nn.Linear(lstm_dim, hp.model.fc1_dim)
         self.fc2 = nn.Linear(hp.model.fc1_dim, hp.model.fc2_dim)
 
     def forward(self, x, dvec):
