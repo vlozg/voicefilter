@@ -57,21 +57,21 @@ def trainer(args, pt_dir, chkpt_path, trainloader, testloader, writer, logger, h
         while True:
             model.train()
             for dvec_mels, target_mag, target_phase, mixed_mag, mixed_phase, target_stft, mixed_stft in trainloader:
-                target_stft = target_stft.cuda()
-                mixed_stft = mixed_stft.cuda()
-                # mixed_mag = mixed_mag.cuda()
-                # mixed_phase = mixed_phase.cuda()
-                # target_mag = target_mag.cuda()
-                # target_phase = target_phase.cuda()
+                target_stft = target_stft.cuda(non_blocking=True)
+                mixed_stft = mixed_stft.cuda(non_blocking=True)
+                # mixed_mag = mixed_mag.cuda(non_blocking=True)
+                # mixed_phase = mixed_phase.cuda(non_blocking=True)
+                # target_mag = target_mag.cuda(non_blocking=True)
+                # target_phase = target_phase.cuda(non_blocking=True)
 
                 dvec_list = list()
                 for mel in dvec_mels:
-                    mel = mel.cuda()
+                    mel = mel.cuda(non_blocking=True)
                     dvec = embedder(mel)
                     dvec_list.append(dvec)
                 dvec = torch.stack(dvec_list, dim=0)
                 dvec = dvec.detach()
-
+                # torch.cuda.empty_cache()
                 # mask = model(mixed_mag, dvec)
                 mask = model(torch.pow(mixed_stft.abs(), 0.3), dvec)
                 # output = mixed_mag*mask
