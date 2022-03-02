@@ -18,7 +18,7 @@ class MyWriter(SummaryWriter):
                        step):
         
         self.add_scalar('test_loss', test_loss, step)
-        self.add_scalar('SDR_mean', sdr_mean, step)
+        self.add_scalar('SDR', sdr_mean, step)
         self.add_scalar('SDR_median', sdr_med, step)
 
         self.add_audio('mixed_wav', mixed_wav, step, self.hp.audio.sample_rate)
