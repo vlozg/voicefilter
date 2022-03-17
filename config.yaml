@@ -13,7 +13,7 @@ model:
   lstm_dim: 400
   fc1_dim: 600
   fc2_dim: 601 # num_freq
-  bidirection: False
+  bidirection: True
 ---
 data:
   libri_dir: 'datasets/LibriSpeech'
@@ -25,7 +25,7 @@ data:
   audio_len: 3.0
 ---
 train:
-  batch_size: 2
+  batch_size: 4
   num_workers: 2
   optimizer: 'adam'
   adam: 0.001
@@ -33,7 +33,7 @@ train:
     initial: 0.001
     final: 0.05
   summary_interval: 1
-  grad_accumulate: 4
+  grad_accumulate: 2
   checkpoint_interval: 3000
 ---
 log:
