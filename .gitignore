@@ -119,6 +119,12 @@ embedder.pt
 # Datasets folder
 datasets/*/
 
+# Saved evaluate result,, backup
+evaluate/bk/
+.backup/
+
 # VSCode config
 .vscode/
 .scripts/
+
+model/ZaloAITopSolution/

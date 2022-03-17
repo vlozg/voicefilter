@@ -1,0 +1,20 @@
+datasets/LibriSpeech/dev-clean/6319/57405/6319-57405-0011.flac
+datasets/LibriSpeech/dev-clean/6319/275224/6319-275224-0006.flac
+datasets/LibriSpeech/dev-clean/7850/286674/7850-286674-0000.flac
+reason: giọng dvec không giống giọng target
+
+datasets/LibriSpeech/dev-clean/5338/284437/5338-284437-0031.flac
+datasets/LibriSpeech/dev-clean/5338/24640/5338-24640-0007.flac
+datasets/LibriSpeech/dev-clean/2277/149896/2277-149896-0000.flac
+reason: giọng dvec đang nói ở tông cảm thán -> nghe khác với giọng thường
+
+datasets/LibriSpeech/dev-clean/6319/64726/6319-64726-0019.flac
+datasets/LibriSpeech/dev-clean/6319/275224/6319-275224-0008.flac
+datasets/LibriSpeech/dev-clean/652/130726/652-130726-0009.flac
+reason: như trên
+
+datasets/LibriSpeech/dev-clean/8842/302203/8842-302203-0006.flac
+datasets/LibriSpeech/dev-clean/8842/302196/8842-302196-0000.flac
+datasets/LibriSpeech/dev-clean/5895/34615/5895-34615-0021.flac
+reason: giọng không giống -> model xóa nhầm giọng!! (dù giọng dvec cũng chả giống giọng đc giữ lắm)
+
