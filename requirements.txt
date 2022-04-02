@@ -11,3 +11,5 @@ Pillow
 
 PyDrive2==1.10.0
 gdown
+
+torchinfo
