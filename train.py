@@ -2,6 +2,7 @@ import os
 import time
 import logging
 import argparse
+import traceback
 
 from utils.trainer import trainer
 from utils.hparams import HParam
@@ -56,4 +57,8 @@ if __name__ == '__main__':
     trainloader = create_dataloader(hp, "generate", dataset_detail=args.train_set, scheme="train")
     testloader = create_dataloader(hp, "generate", dataset_detail=args.test_set, scheme="test")
 
-    trainer(args, pt_dir, chkpt_path, trainloader, testloader, writer, logger, hp, hp_str)
+    try:
+        trainer(args, pt_dir, chkpt_path, trainloader, testloader, writer, logger, hp, hp_str)
+    except Exception as e:
+        logger.info("Exiting due to exception: %s" % e)
+        traceback.print_exc()
