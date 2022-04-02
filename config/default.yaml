@@ -34,6 +34,7 @@ train:
   summary_interval: 1
   grad_accumulate: 12
   checkpoint_interval: 3000
+  max_step: -1
 ---
 log:
   chkpt_dir: 'chkpt'

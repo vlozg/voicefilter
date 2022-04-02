@@ -54,7 +54,7 @@ def trainer(args, pt_dir, chkpt_path, trainloader, testloader, writer, logger, h
     try:
         # criterion = nn.MSELoss()
         criterion = PowerLawCompLoss()
-        while True:
+        while (hp.max_step == -1 or step <= hp.max_step):
             model.train()
             for dvec_mels, target_mag, target_phase, mixed_mag, mixed_phase, target_stft, mixed_stft in trainloader:
                 target_stft = target_stft.cuda(non_blocking=True)

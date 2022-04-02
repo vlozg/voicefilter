@@ -25,16 +25,17 @@ data:
   audio_len: 3.0
 ---
 train:
-  batch_size: 4
-  num_workers: 2
+  batch_size: 8
+  num_workers: 8
   optimizer: 'adam'
   adam: 0.001
   adabound:
     initial: 0.001
     final: 0.05
   summary_interval: 1
-  grad_accumulate: 2
+  grad_accumulate: 1
   checkpoint_interval: 3000
+  max_step: -1
 ---
 log:
   chkpt_dir: 'chkpt'
