@@ -7,7 +7,7 @@ import traceback
 from .adabound import AdaBound
 from .audio import Audio
 from .evaluation import validate
-from model.model import VoiceFilter
+from model.voicefilter import VoiceFilter
 from model.embedder import SpeechEmbedder
 from .power_law_loss import PowerLawCompLoss
 from .gdrive import GDrive

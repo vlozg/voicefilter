@@ -12,7 +12,7 @@ from datasets.dataloader import create_dataloader
 
 from utils.adabound import AdaBound
 from utils.power_law_loss import PowerLawCompLoss
-from model.model import VoiceFilter
+from model.voicefilter import VoiceFilter
 from model.embedder import SpeechEmbedder
 
 hp = HParam("config.yaml")

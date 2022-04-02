@@ -6,7 +6,7 @@ import argparse
 
 from utils.audio import Audio
 from utils.hparams import HParam
-from model.model import VoiceFilter
+from model.voicefilter import VoiceFilter
 from model.embedder import SpeechEmbedder
 
 
