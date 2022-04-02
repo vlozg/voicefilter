@@ -103,6 +103,7 @@ def trainer(args, pt_dir, chkpt_path, trainloader, testloader, writer, logger, h
             accum_loss += loss.item()
             accum += 1
         
+        # Check exploding gradient
         if accum_loss > 1e8 or math.isnan(accum_loss):
             save_path = os.path.join(pt_dir, 'err_chkpt_%d.pt' % step)
             torch.save({
@@ -115,6 +116,7 @@ def trainer(args, pt_dir, chkpt_path, trainloader, testloader, writer, logger, h
             logger.error("Loss exploded to %.02f at step %d!" % (accum_loss, step))
             raise Exception("Loss exploded")
 
+        # Optimizer step (w/ gradient accumulation)
         if accum % hp["train"]["grad_accumulate"] == 0:
             optimizer.step()
             optimizer.zero_grad()
