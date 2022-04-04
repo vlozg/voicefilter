@@ -8,6 +8,7 @@ from .audio import Audio
 from .evaluation import validate
 from model.voicefilter import VoiceFilter
 from model.embedder import SpeechEmbedder
+from model.pse_dccrn import PSE_DCCRN
 from .power_law_loss import PowerLawCompLoss
 from .gdrive import GDrive
 from torch.profiler import profile, record_function, ProfilerActivity
@@ -21,7 +22,10 @@ def trainer(args, pt_dir, chkpt_path, trainloader, testloader, writer, logger, h
     embedder.eval()
 
     audio = Audio(hp)
-    model = VoiceFilter(hp).cuda()
+    # model = VoiceFilter(hp).cuda()
+    model = PSE_DCCRN(hp, win_len=hp.audio.win_length,
+                    win_inc=hp.audio.hop_length,
+                    rnn_units=256,masking_mode='E',use_clstm=True,kernel_num=[32, 64, 128, 256, 256,256]).cuda()
     if hp.train.optimizer == 'adabound':
         optimizer = AdaBound(model.parameters(),
                              lr=hp.train.adabound.initial,
@@ -61,14 +65,17 @@ def trainer(args, pt_dir, chkpt_path, trainloader, testloader, writer, logger, h
     
     while (hp.train.max_step == -1 or step < hp.train.max_step):
         # Next training batch (randomly generated)
-        dvec_mels, target_mag, target_phase, mixed_mag, mixed_phase, target_stft, mixed_stft = next(it)
+        # dvec_mels, target_mag, target_phase, mixed_mag, mixed_phase, target_stft, mixed_stft = next(it)
+        dvec_mels, target_wav, mixed_wav, target_stft, mixed_stft = next(it)
         
         # Move to cude
         with ExitStack() as stack:
             if profiling:
                 stack.enter_context(record_function("to_cuda"))
             target_stft = target_stft.cuda(non_blocking=True)
-            mixed_stft = mixed_stft.cuda(non_blocking=True)
+            # mixed_stft = mixed_stft.cuda(non_blocking=True)
+            target_wav = target_wav.cuda(non_blocking=True)
+            mixed_wav = mixed_wav.cuda(non_blocking=True)
             # mixed_mag = mixed_mag.cuda(non_blocking=True)
             # mixed_phase = mixed_phase.cuda(non_blocking=True)
             # target_mag = target_mag.cuda(non_blocking=True)
@@ -92,8 +99,13 @@ def trainer(args, pt_dir, chkpt_path, trainloader, testloader, writer, logger, h
         with ExitStack() as stack:
             if profiling:
                 stack.enter_context(record_function("forward"))
-            mask = model(torch.pow(mixed_stft.abs(), 0.3), dvec)
-            loss = criterion(mask, mixed_stft, target_stft)
+            # mask = model(torch.pow(mixed_stft.abs(), 0.3), dvec)
+            # loss = criterion(mask, mixed_stft, target_stft)
+            est_stft, out_wav = model(mixed_wav, dvec)
+            est_stft = est_stft.transpose(1,2)
+            b, t, _= est_stft.shape
+            est_stft = torch.view_as_complex(est_stft.reshape(b, t, 2, -1).transpose(2,3).contiguous())
+            loss = criterion(1, est_stft, target_stft)
 
         # Backward
         with ExitStack() as stack:

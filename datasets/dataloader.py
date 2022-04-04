@@ -36,6 +36,41 @@ def create_dataloader(hp, dataset_type, *, dataset_detail=None, scheme, size=Non
             mixed_mag_list, mixed_phase_list, \
             target_stft_list, mixed_stft_list
 
+    def train_psedccrn_collate_fn(batch):
+        dvec_list = list()
+        target_wav_list = list()
+        mixed_wav_list = list()
+        target_stft_list = list()
+        mixed_stft_list = list()
+        
+        for _, _, _, dvec_mel, w1, mixed, _, _, _, _, target_stft, mixed_stft, *_ in batch:
+            dvec_list.append(dvec_mel)
+            target_stft_list.append(target_stft)
+            mixed_stft_list.append(mixed_stft)
+            target_wav_list.append(torch.from_numpy(w1))
+            mixed_wav_list.append(torch.from_numpy(mixed))
+        target_stft_list = torch.stack(target_stft_list, dim=0)
+        mixed_stft_list = torch.stack(mixed_stft_list, dim=0)
+        target_wav_list = torch.stack(target_wav_list, dim=0)
+        mixed_wav_list = torch.stack(mixed_wav_list, dim=0)
+
+        return dvec_list, target_wav_list, mixed_wav_list, \
+            target_stft_list, mixed_stft_list
+
+    def train_raw_collate_fn(batch):
+        dvec_list = list()
+        target_wav_list = list()
+        mixed_wav_list = list()
+        
+        for _, _, _, dvec_mel, w1, mixed, *_ in batch:
+            dvec_list.append(dvec_mel)
+            target_wav_list.append(w1)
+            mixed_wav_list.append(mixed)
+        target_wav_list = torch.stack(target_wav_list, dim=0)
+        mixed_wav_list = torch.stack(mixed_wav_list, dim=0)
+
+        return dvec_list, target_wav_list, mixed_wav_list
+
     def test_collate_fn(batch):
         return batch
 
@@ -110,6 +145,24 @@ def create_dataloader(hp, dataset_type, *, dataset_detail=None, scheme, size=Non
                           pin_memory=True,
                           drop_last=True,
                           sampler=None)
+    elif scheme == "train_psedccrn":
+        return DataLoader(dataset=dataset,
+                          batch_size=hp.train.batch_size,
+                          shuffle=True,
+                          num_workers=hp.train.num_workers,
+                          collate_fn=train_psedccrn_collate_fn,
+                          pin_memory=True,
+                          drop_last=True,
+                          sampler=None)
+    elif scheme == "train_raw":
+        return DataLoader(dataset=dataset,
+                          batch_size=hp.train.batch_size,
+                          shuffle=True,
+                          num_workers=hp.train.num_workers,
+                          collate_fn=train_raw_collate_fn,
+                          pin_memory=True,
+                          drop_last=True,
+                          sampler=None)
     elif scheme == "test":
         return DataLoader(dataset=dataset,
                           collate_fn=test_collate_fn,
@@ -118,7 +171,7 @@ def create_dataloader(hp, dataset_type, *, dataset_detail=None, scheme, size=Non
         return DataLoader(dataset=dataset,
                           batch_size=hp.train.batch_size,
                           shuffle=False,
-                          num_workers=0,
+                          num_workers=hp.train.num_workers,
                           collate_fn=test_cuda_collate_fn,
                           pin_memory=True,
                           drop_last=True,
@@ -127,7 +180,7 @@ def create_dataloader(hp, dataset_type, *, dataset_detail=None, scheme, size=Non
         return DataLoader(dataset=dataset,
                           batch_size=hp.train.batch_size,
                           shuffle=False,
-                          num_workers=0,
+                          num_workers=hp.train.num_workers,
                           collate_fn=test_cuda_debug_collate_fn,
                           drop_last=True,
                           sampler=None)

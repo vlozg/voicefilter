@@ -19,21 +19,30 @@ def validate(audio, model, embedder, testloader, writer, logger, step):
             _, _, _, dvec_mel, target_wav, mixed_wav, _, _, _, _, target_stft, mixed_stft, *_ = batch[0]
             dvec_mel = dvec_mel.cuda()
             target_stft = target_stft.unsqueeze(0).cuda()
+            mixed_wav_ = torch.from_numpy(mixed_wav).unsqueeze(0).cuda()
             mixed_stft = mixed_stft.unsqueeze(0).cuda()
             # mixed_mag = mixed_mag.unsqueeze(0).cuda()
 
             dvec = embedder(dvec_mel)
             dvec = dvec.unsqueeze(0)
             # est_mask = model(mixed_mag, dvec)
-            est_mask = model(torch.pow(mixed_stft.abs(), 0.3), dvec)
-            test_losses.append(criterion(est_mask, mixed_stft, target_stft).item())
-            est_mask = torch.pow(est_mask, 10/3)
-            est_stft = mixed_stft * est_mask
+            # est_mask = model(torch.pow(mixed_stft.abs(), 0.3), dvec)
+            est_stft, est_wav = model(mixed_wav_, dvec)
+            est_stft = est_stft.transpose(1,2)
+            b, t, _= est_stft.shape
+            est_stft = torch.view_as_complex(est_stft.reshape(b, t, 2, -1).transpose(2,3).contiguous())
+            test_losses.append(criterion(1, est_stft, target_stft).item())
+            est_mask = est_stft.abs()/mixed_stft.abs()
+            # test_losses.append(criterion(est_mask, mixed_stft, target_stft).item())
+            # est_mask = torch.pow(est_mask, 10/3)
+            # est_stft = mixed_stft * est_mask
 
             mixed_stft = mixed_stft[0].T.cpu().detach().numpy()
             target_stft = target_stft[0].T.cpu().detach().numpy()
             est_stft = est_stft[0].T.cpu().detach().numpy()
-            est_wav = audio._istft(est_stft)
+            # est_wav = audio._istft(est_stft)
+            est_wav = est_wav[0].cpu().detach().numpy()
+            est_wav = np.pad(est_wav[:len(target_wav)], (0, max(0, len(target_wav)-len(est_wav))), constant_values=0)
             est_mask = est_mask[0].cpu().detach().numpy()
 
             sdrs.append(bss_eval_sources(target_wav, est_wav, False)[0][0])

@@ -54,7 +54,7 @@ if __name__ == '__main__':
 
     writer = MyWriter(hp, log_dir)
 
-    trainloader = create_dataloader(hp, "generate", dataset_detail=args.train_set, scheme="train")
+    trainloader = create_dataloader(hp, "generate", dataset_detail=args.train_set, scheme="train_psedccrn")
     testloader = create_dataloader(hp, "generate", dataset_detail=args.test_set, scheme="test")
 
     try:

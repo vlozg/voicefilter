@@ -32,6 +32,6 @@ class MyWriter(SummaryWriter):
         self.add_image('result/estimated_spectrogram',
             plot_spectrogram_to_numpy(est_spec), step, dataformats='HWC')
         self.add_image('result/estimated_mask',
-            plot_spectrogram_to_numpy(est_mask), step, dataformats='HWC')
+            plot_spectrogram_to_numpy(est_mask, range=(0,1)), step, dataformats='HWC')
         self.add_image('result/estimation_error_sqr',
             plot_spectrogram_to_numpy(np.abs(est_spec - target_spec)**0.5, (0, 1)), step, dataformats='HWC')
