@@ -1,0 +1,21 @@
+# Main DL, audio module
+torch>=1.10.0
+numpy
+librosa==0.8.1
+soundfile
+
+# Metrics (SDR) module
+mir_eval
+fast-bss-eval
+torch_mir_eval
+
+# Ultilities
+tqdm
+pyyaml==5.4.1
+matplotlib
+tensorboardX
+Pillow
+
+# Backup to google drive 
+PyDrive2==1.10.0
+gdown
