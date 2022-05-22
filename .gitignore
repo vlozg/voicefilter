@@ -1,6 +1,6 @@
 .idea/
 # configuration yaml files
-config/*
+config/tmp/*
 !config/default.yaml
 
 
