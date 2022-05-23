@@ -8,6 +8,7 @@ def create_dataloader(config, scheme):
 
     def train_collate_fn(batch):
         dvecs = list()
+        dvec_wavs = list()
         target_stfts = list()
         mixed_stfts = list()
         mixed_mags = list()
@@ -17,6 +18,7 @@ def create_dataloader(config, scheme):
         
         for sample in batch:
             dvecs.append(sample["dvec_mel"])
+            dvec_wavs.append(sample["dvec_wav"])
             target_stfts.append(sample["target_stft"])
             mixed_stfts.append(sample["mixed_stft"])
             mixed_mags.append(sample["mixed_mag"])
@@ -33,6 +35,7 @@ def create_dataloader(config, scheme):
 
         return {
             "dvec": dvecs, 
+            "dvec_wav": dvec_wavs,
             "target_stft": target_stfts,
             "target_mag": target_mags, 
             "tagret_phase": target_phases,
@@ -43,6 +46,7 @@ def create_dataloader(config, scheme):
 
     def test_collate_fn(batch):
         dvecs = list()
+        dvec_wavs = list()
         target_wavs = list()
         mixed_wavs = list()
         target_stfts = list()
@@ -54,6 +58,7 @@ def create_dataloader(config, scheme):
         
         for sample in batch:
             dvecs.append(sample["dvec_mel"])
+            dvec_wavs.append(sample["dvec_wav"])
             target_wavs.append(sample["target_wav"])
             mixed_wavs.append(sample["mixed_wav"])
             target_stfts.append(sample["target_stft"])
@@ -72,6 +77,7 @@ def create_dataloader(config, scheme):
 
         return {
             "dvec": dvecs, 
+            "dvec_wav": dvec_wavs,
             "target_wav": target_wavs,
             "mixed_wav": mixed_wavs,
             "target_stft": target_stfts,

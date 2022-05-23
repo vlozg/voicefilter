@@ -139,6 +139,7 @@ class VFDataset(Dataset):
             "target_path": s1_target, 
             "interf_path": s2,
             "dvec_mel": dvec_mel,
+            "dvec_wav": d,
             "target_wav": w1,
             "mixed_wav": mixed,
             "target_mag": torch.from_numpy(target_mag),
