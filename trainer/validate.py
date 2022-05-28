@@ -2,10 +2,9 @@ import torch
 import torch.nn as nn
 import numpy as np
 from mir_eval.separation import bss_eval_sources
-from model.forward import train_forward
 
 
-def validate(model, embedder, testloader, criterion, audio, writer, logger, step):
+def validate(model, embedder, testloader, train_forward, criterion, audio, writer, logger, step):
     model.eval()
     
     with torch.no_grad():

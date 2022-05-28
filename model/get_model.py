@@ -1,7 +1,10 @@
 import torch
 
-from model.model import VoiceFilter
-from model.embedder import SpeechEmbedder
+# Embedder
+from model.ge2e import SpeechEmbedder
+
+# Voice seperation model
+from model.voicefilter import VoiceFilter
 from model.pse_dccrn import PSE_DCCRN
 
 def get_embedder(exp_config, train, device):
@@ -40,6 +43,8 @@ def get_vfmodel(exp_config, train, device):
                     win_len=exp_config.audio.win_length,
                     win_inc=exp_config.audio.hop_length,
                     rnn_units=256,masking_mode='E',use_clstm=True,kernel_num=[32, 64, 128, 256, 256,256])
+    else:
+        raise NotImplementedError(f"Please implement {model} model")
 
     # Load model
     if exp_config.model.pretrained_chkpt is not None:
@@ -57,3 +62,13 @@ def get_vfmodel(exp_config, train, device):
         model.eval()
 
     return model, checkpoint
+
+def get_forward(exp_config):
+    model = exp_config.model.name
+    embedder = exp_config.embedder.name
+
+    if embedder == "ge2e" and model == "pse_dccrn":
+        from model.forward_recipes.ge2e_psedccrn import train_forward, inference_forward
+        return train_forward, inference_forward
+    else:
+        raise NotImplementedError(f"Please implement forward function for {embedder} embedder and {model} model")

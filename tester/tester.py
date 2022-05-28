@@ -4,8 +4,7 @@ import numpy as np
 
 from utils.audio import Audio
 
-from model.get_model import get_vfmodel, get_embedder
-from model.forward import train_forward
+from model.get_model import get_vfmodel, get_embedder, get_forward
 from loss.get_criterion import get_criterion
 
 from torch_mir_eval import bss_eval_sources
@@ -19,6 +18,7 @@ def tester(config, testloader, logger):
     device = "cuda" if config.use_cuda else "cpu"
     embedder = get_embedder(config, train=False, device=device)
     model, chkpt = get_vfmodel(config, train=False, device=device)
+    train_forward, _ = get_forward(config)
     criterion = get_criterion(config, reduction="none")
 
     if chkpt is None:

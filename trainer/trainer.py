@@ -6,8 +6,7 @@ import torch
 from utils.adabound import AdaBound
 from utils.audio import Audio
 
-from model.get_model import get_vfmodel, get_embedder
-from model.forward import train_forward
+from model.get_model import get_vfmodel, get_embedder, get_forward
 from loss.get_criterion import get_criterion
 from .validate import validate
 
@@ -24,6 +23,7 @@ def trainer(config, pt_dir, trainloader, testloader, writer, logger, hp_str):
     audio = Audio(config)
     embedder = get_embedder(config, train=False, device="cuda")
     model, chkpt = get_vfmodel(config, train=True, device="cuda")
+    train_forward, _ = get_forward(config)
     criterion = get_criterion(config)
 
     if config.train.optimizer == 'adabound':
@@ -104,4 +104,4 @@ def trainer(config, pt_dir, trainloader, testloader, writer, logger, hp_str):
                 'hp_str': hp_str,
             }, save_path)
             logger.info("Saved checkpoint to: %s" % save_path)
-            validate(model, embedder, testloader, criterion, audio, writer, logger, step)
+            validate(model, embedder, testloader, train_forward, criterion, audio, writer, logger, step)
