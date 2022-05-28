@@ -64,6 +64,8 @@ def create_dataloader(config, scheme):
             target_phases.append(sample["target_phase"])
 
         target_stfts = pad_sequence(target_stfts, batch_first=True)
+        target_wavs = pad_sequence(target_wavs, batch_first=True)
+        mixed_wavs = pad_sequence(mixed_wavs, batch_first=True)
         mixed_stfts = pad_sequence(mixed_stfts, batch_first=True)
         mixed_mags = pad_sequence(mixed_mags, batch_first=True)
         mixed_phases = pad_sequence(mixed_phases, batch_first=True)

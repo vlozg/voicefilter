@@ -38,8 +38,8 @@ def tester(config, testloader, logger):
             for est_stft_, mixed_wav, target_wav in zip(est_stft, batch["mixed_wav"], batch["target_wav"]):
                 est_wav = audio._istft(est_stft_.T, length=len(target_wav))
                 est_wav = torch.from_numpy(est_wav).to(device=device).reshape(1, -1)
-                target_wav = torch.from_numpy(target_wav).to(device=device).reshape(1, -1)
-                mixed_wav = torch.from_numpy(mixed_wav).to(device=device).reshape(1, -1)
+                target_wav = target_wav.to(device=device).reshape(1, -1)
+                mixed_wav = mixed_wav.to(device=device).reshape(1, -1)
                 
                 #print(est_wav.shape, " ", target_wav.shape, " ", mixed_wav.shape)
                 
