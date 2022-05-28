@@ -1,28 +1,29 @@
 experiment:
-  name: "power_law_re"
+  name: "Re_eval_PSE_DCCRN"
   clean_rerun: True # Delete old logs and chkpt if true
+  use_cuda: False
   
   dataset:
     name: "generate"
     train:
-      file_path: "datasets/recipes/LibriGenerate_train.csv"
-      detail: ["librispeech-train"]
+      file_path: "datasets/recipes/VivosGenerate_train.csv"
+      detail: ["vivos-train"]
       audio_len: 3.0
       size: 500000
     eval: 
+      file_path: "datasets/recipes/VivosGenerate_eval.csv"
+      detail: ["vivos-test"]
+      audio_len: 3.0
+      size: 100
+    test:
       file_path: "datasets/recipes/LibriGenerate_eval.csv"
       detail: ["librispeech-test"]
       audio_len: 3.0
       size: 100
-    test:
-      file_path: "datasets/recipes/LibriGenerate_test.csv"
-      detail: ["librispeech-test"]
-      audio_len: # varying audio length
-      size: 10000
   
   model:
-    name: "voicefilter"
-    pretrained_chkpt:
+    name: "pse_dccrn"
+    pretrained_chkpt: "chkpt/pse_dccrn/chkpt_355000.pt"
     resume_from_chkpt: False
     input_dim:  # 8*audio.num_freq + embedder.emb_dim, will get computed in get_model.py
     lstm_dim: 400
@@ -33,12 +34,12 @@ experiment:
   loss_function: "power_law_compressed"
 
   train:
-    batch_size: 4
-    num_workers: 4
-    grad_accumulate: 2
+    batch_size: 1
+    num_workers: 1
+    grad_accumulate: 8
     optimizer: "adam"
     optimizer_param: 
-      lr: 0.001
+      lr: 0.005
     max_step: 500000
     summary_interval: 1
     checkpoint_interval: 5000
