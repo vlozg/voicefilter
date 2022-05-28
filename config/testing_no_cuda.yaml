@@ -6,17 +6,17 @@ experiment:
   dataset:
     name: "generate"
     train:
-      file_path: "datasets/VivosGenerate_train.csv"
+      file_path: "datasets/recipes/VivosGenerate_train.csv"
       detail: ["vivos-train"]
       audio_len: 3.0
       size: 500000
     eval: 
-      file_path: "datasets/VivosGenerate_eval.csv"
+      file_path: "datasets/recipes/VivosGenerate_eval.csv"
       detail: ["vivos-test"]
       audio_len: 3.0
       size: 100
     test:
-      file_path: "datasets/VivosGenerate_test.csv"
+      file_path: "datasets/recipes/VivosGenerate_test.csv"
       detail: ["vivos-train", "vivos-test"]
       audio_len: # varying audio length
       size: 10000
