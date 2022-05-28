@@ -45,6 +45,7 @@ experiment:
     checkpoint_interval: 5000
   
   embedder: # d-vector embedder. don"t fix it!
+    name: "ge2e"
     pretrained_chkpt: "embedder.pt"
     num_mels: 40
     n_fft: 512
