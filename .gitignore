@@ -131,6 +131,7 @@ experiment_nb/
 .bk/
 .bot/
 ZA-Challenge-Voice/
+DeepComplexCRN/
 script/00_download_Vin.sh
 script/00_download_voxceleb1.sh
 script/00_download_voxceleb2.sh
