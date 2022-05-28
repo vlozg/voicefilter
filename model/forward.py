@@ -7,13 +7,16 @@ from torch.profiler import profile, record_function, ProfilerActivity
 
 def train_forward(model, embedder, batch, criterion, device):
     dvec_mels = batch["dvec"]
+    target_wav = batch["target_wav"]
+    mixed_wav = batch["mixed_wav"]
     target_stft = batch["target_stft"]
     mixed_stft = batch["mixed_stft"]
 
     # Move to cuda
     if device == "cuda":
         target_stft = target_stft.cuda(non_blocking=True)
-        mixed_stft = mixed_stft.cuda(non_blocking=True)
+        target_wav = target_wav.cuda(non_blocking=True)
+        mixed_wav = mixed_wav.cuda(non_blocking=True)
         dvec_mels = [mel.cuda(non_blocking=True) for mel in dvec_mels]
 
     # Get dvec
@@ -24,20 +27,24 @@ def train_forward(model, embedder, batch, criterion, device):
     dvec = torch.stack(dvec_list, dim=0)
     dvec = dvec.detach()
 
-    mask = model(torch.pow(mixed_stft.abs(), 0.3), dvec)
-    output = mixed_stft*torch.pow(mask, 10/3)
+    est_stft, est_wav = model(mixed_wav, dvec)
+    est_stft = est_stft.transpose(1,2)
+    b, t, _= est_stft.shape
+    est_stft = torch.view_as_complex(est_stft.reshape(b, t, 2, -1).transpose(2,3).contiguous())
+    est_mask = est_stft.abs()/mixed_stft.abs()
 
-    loss = criterion(mask, mixed_stft, target_stft)
+    loss = criterion(1, est_stft, target_stft)
     
-    return output, mask, loss
+    return est_stft, est_mask, loss
 
 def inference_forward(model, embedder, batch, device):
     dvec_mels = batch["dvec"]
+    mixed_wav = batch["mixed_wav"]
     mixed_stft = batch["mixed_stft"]
 
     # Move to cuda
     if device == "cuda":
-        mixed_stft = mixed_stft.cuda(non_blocking=True)
+        mixed_wav = mixed_wav.cuda(non_blocking=True)
         dvec_mels = [mel.cuda(non_blocking=True) for mel in dvec_mels]
 
     # Get dvec
@@ -48,7 +55,7 @@ def inference_forward(model, embedder, batch, device):
     dvec = torch.stack(dvec_list, dim=0)
     dvec = dvec.detach()
 
-    mask = model(torch.pow(mixed_stft.abs(), 0.3), dvec)
-    output = mixed_stft*torch.pow(mask, 10/3)
+    est_stft, est_wav = model(mixed_wav, dvec)
+    est_mask = est_stft.abs()/mixed_stft.abs()
     
-    return output, mask
+    return est_stft, est_mask

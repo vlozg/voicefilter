@@ -2,7 +2,7 @@ import torch
 
 from model.model import VoiceFilter
 from model.embedder import SpeechEmbedder
-
+from model.pse_dccrn import PSE_DCCRN
 
 def get_embedder(exp_config, train, device):
 
@@ -27,12 +27,19 @@ def get_embedder(exp_config, train, device):
 
 def get_vfmodel(exp_config, train, device):
 
-    # Check config config, compute input dim
-    assert exp_config.audio.n_fft // 2 + 1 == exp_config.audio.num_freq == exp_config.model.fc2_dim, \
-            "stft-related dimension mismatch"
-    exp_config.model.input_dim = 8*exp_config.audio.num_freq + exp_config.embedder.emb_dim
-    
-    model = VoiceFilter(exp_config.model)
+    if exp_config.model.name == "voicefilter":
+        # Check config, compute input dim
+        assert exp_config.audio.n_fft // 2 + 1 == exp_config.audio.num_freq == exp_config.model.fc2_dim, \
+                "stft-related dimension mismatch"
+        exp_config.model.input_dim = 8*exp_config.audio.num_freq + exp_config.embedder.emb_dim
+        
+        model = VoiceFilter(exp_config.model)
+    elif exp_config.model.name == "pse_dccrn":
+        model = PSE_DCCRN(exp_config, 
+                    fft_len=exp_config.audio.n_fft,
+                    win_len=exp_config.audio.win_length,
+                    win_inc=exp_config.audio.hop_length,
+                    rnn_units=256,masking_mode='E',use_clstm=True,kernel_num=[32, 64, 128, 256, 256,256])
 
     # Load model
     if exp_config.model.pretrained_chkpt is not None:
