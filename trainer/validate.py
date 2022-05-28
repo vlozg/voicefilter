@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import numpy as np
-from mir_eval.separation import bss_eval_sources
+from torch_mir_eval import bss_eval_sources
 
 
 def validate(model, embedder, testloader, train_forward, criterion, audio, writer, logger, step):
@@ -20,7 +20,10 @@ def validate(model, embedder, testloader, train_forward, criterion, audio, write
 
             for est_stft_, target_wav in zip(est_stft, batch["target_wav"]):
                 est_wav = audio._istft(est_stft_.T, length=len(target_wav))
-                sdrs.append(bss_eval_sources(target_wav, est_wav, False)[0][0])
+                est_wav = torch.from_numpy(est_wav).reshape(1, -1)
+                target_wav = target_wav.reshape(1, -1)
+                sdr,sir,sar,perm = bss_eval_sources(target_wav,est_wav,compute_permutation=True)
+                sdrs.append(sdr)
         
         test_loss = np.array(test_losses).mean()
         sdr_mean = np.array(sdrs).mean()
