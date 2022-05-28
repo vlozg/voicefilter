@@ -1,6 +1,6 @@
 .idea/
 # configuration yaml files
-config/*
+config/tmp/*
 !config/default.yaml
 
 
@@ -130,6 +130,7 @@ datasets/*/
 experiment_nb/
 .bk/
 .bot/
+ZA-Challenge-Voice/
 script/00_download_Vin.sh
 script/00_download_voxceleb1.sh
 script/00_download_voxceleb2.sh
