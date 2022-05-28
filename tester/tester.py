@@ -9,7 +9,6 @@ from model.forward import train_forward
 from loss.get_criterion import get_criterion
 
 from torch_mir_eval import bss_eval_sources
-#from fast_bss_eval import sdr
 
 from tqdm import tqdm
 
