@@ -19,3 +19,6 @@ Pillow
 # Backup to google drive 
 PyDrive2==1.10.0
 gdown
+
+# From Zalo Solutions
+yacs==0.1.4
