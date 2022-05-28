@@ -1,5 +1,5 @@
 experiment:
-  name: "Trying_fast_bss"
+  name: "no_cuda_b1"
   clean_rerun: True # Delete old logs and chkpt if true
   use_cuda: False
   
