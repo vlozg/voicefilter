@@ -13,10 +13,6 @@ def vad_merge(w):
         temp.append(w[s:e])
     return np.concatenate(temp, axis=None)
 
-def create_dataset(config, dataset_name, base_dir="."):
-    return VFGGDataset(config.experiment, dataset=dataset_name, base_dir=base_dir)
-
-
 class VFGGDataset(Dataset):
     def __init__(self, config, dataset, base_dir):
         self.sr = config.audio.sample_rate

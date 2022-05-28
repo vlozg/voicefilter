@@ -1,8 +1,8 @@
 import torch
 from torch.utils.data import DataLoader
 from torch.nn.utils.rnn import pad_sequence
-from .GenerateDataset import create_dataset
-from .GGSpeakerIDDataset import create_dataset as create_gg_dataset
+
+from .get_dataset import get_dataset
 
 def create_dataloader(config, scheme):
 
@@ -85,10 +85,7 @@ def create_dataloader(config, scheme):
         }
 
     # Genearate dataset
-    if config.experiment.dataset.name == "generate":
-        dataset = create_dataset(config, config.experiment.dataset[scheme])
-    elif config.experiment.dataset.name == "gg":
-        dataset = create_dataset(config, config.experiment.dataset[scheme])
+    dataset = get_dataset(config, scheme)
 
 
     if scheme == "train":
