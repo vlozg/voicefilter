@@ -56,6 +56,6 @@ def tester(config, testloader, logger):
 
     return {
         "loss": test_losses, 
-        "sdr_before": sdrs_before, 
-        "sdr_after": sdrs_after,
+        # "sdr_before": sdrs_before, 
+        "sdr": sdrs_after,
     }

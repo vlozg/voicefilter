@@ -97,9 +97,18 @@ def create_dataloader(config, scheme):
                           pin_memory=True if config.experiment.use_cuda else False,
                           drop_last=True,
                           sampler=None)
-    elif scheme == "test" or scheme == "eval":
+    elif scheme == "eval":
         return DataLoader(dataset=dataset,
                           batch_size=config.experiment.train.batch_size,
+                          shuffle=False,
+                          num_workers=config.experiment.train.num_workers,
+                          collate_fn=test_collate_fn,
+                          pin_memory=True if config.experiment.use_cuda else False,
+                          drop_last=False,
+                          sampler=None)
+    elif scheme == "test":
+        return DataLoader(dataset=dataset,
+                          batch_size=1,
                           shuffle=False,
                           num_workers=config.experiment.train.num_workers,
                           collate_fn=test_collate_fn,
