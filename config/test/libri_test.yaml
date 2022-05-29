@@ -1,0 +1,10 @@
+experiment:
+  use_cuda: False
+  
+  dataset:
+    name: "generate" 
+    test:
+      file_path: "datasets/recipes/LibriGenerate_test.csv"
+      detail: ["librispeech-test"]
+      audio_len: # varying audio length
+      size: 10000

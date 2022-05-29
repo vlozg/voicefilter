@@ -38,7 +38,7 @@ def trainer(config, pt_dir, trainloader, testloader, writer, logger, hp_str):
 
 
     # Check resume from checkpoint
-    if chkpt is not None and config.model.resume_from_chkpt is True:
+    if chkpt is not None:
         logger.info("Resuming from checkpoint: %s" % config.model.pretrained_chkpt)
         optimizer.load_state_dict(chkpt['optimizer'])
         step = chkpt['step']

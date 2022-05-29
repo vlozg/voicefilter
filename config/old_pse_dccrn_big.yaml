@@ -1,7 +1,7 @@
 experiment:
-  name: "Re_eval_PSE_DCCRN"
+  name: "PSE_DCCRN_big"
   clean_rerun: True # Delete old logs and chkpt if true
-  use_cuda: False
+  use_cuda: True
   
   dataset:
     name: "generate"
@@ -23,8 +23,7 @@ experiment:
   
   model:
     name: "pse_dccrn"
-    pretrained_chkpt: "chkpt/pse_dccrn/chkpt_355000.pt"
-    resume_from_chkpt: False
+    pretrained_chkpt:
     input_dim:  # 8*audio.num_freq + embedder.emb_dim, will get computed in get_model.py
     lstm_dim: 400
     fc1_dim: 600
@@ -56,8 +55,8 @@ experiment:
     stride: 40
   
   audio:
-    n_fft: 512
-    num_freq: 257 # n_fft//2 + 1
+    n_fft: 1280
+    num_freq: 641 # n_fft//2 + 1
     sample_rate: 16000
     hop_length: 160
     win_length: 400
