@@ -137,6 +137,15 @@ def generate_dataset_df(exp_config, dataset_config, speakers):
         l1 = random.randint(0, w1.shape[0]-audio_len)
         l2 = random.randint(0, w2.shape[0]-audio_len)
 
+        # Post check if data sample is qualify
+        if audio_len > 0:
+            w1, w2 = w1[l1:l1+audio_len], w2[l2:l2+audio_len]
+        else:
+            w1, w2 = w1[l1:], w2[l2:]
+
+        # Discard almost silent target audio sample (since it will cause error in torch_mir_eval)
+        if w1.sum() < 10e-5:
+            continue
 
         s1_targets.append(s1_target)
         s1_dvecs.append(s1_dvec)
