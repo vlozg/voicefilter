@@ -7,7 +7,6 @@ from torch.profiler import profile, record_function, ProfilerActivity
 
 def train_forward(model, embedder, batch, criterion, device):
     dvec_mels = batch["dvec"]
-    target_wav = batch["target_wav"]
     mixed_wav = batch["mixed_wav"]
     target_stft = batch["target_stft"]
     mixed_stft = batch["mixed_stft"]
@@ -15,7 +14,7 @@ def train_forward(model, embedder, batch, criterion, device):
     # Move to cuda
     if device == "cuda":
         target_stft = target_stft.cuda(non_blocking=True)
-        target_wav = target_wav.cuda(non_blocking=True)
+        mixed_stft = mixed_stft.cuda(non_blocking=True)
         mixed_wav = mixed_wav.cuda(non_blocking=True)
         dvec_mels = [mel.cuda(non_blocking=True) for mel in dvec_mels]
 

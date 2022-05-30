@@ -7,14 +7,20 @@ from model.ge2e import SpeechEmbedder
 from model.voicefilter import VoiceFilter
 from model.pse_dccrn import PSE_DCCRN
 
+import importlib
+ZaloSolutions = importlib.import_module("model.ZA-Challenge-Voice.embedder")
+
 def get_embedder(exp_config, train, device):
 
-    embedder = SpeechEmbedder(exp_config.embedder)
+    if exp_config.embedder.name == "GE2E":
+        embedder = SpeechEmbedder(exp_config.embedder)
 
-    # Load embedder
-    if exp_config.embedder.pretrained_chkpt is not None:
-        embedder_pt = torch.load(exp_config.embedder.pretrained_chkpt, "cpu")
-        embedder.load_state_dict(embedder_pt)
+        # Load embedder
+        if exp_config.embedder.pretrained_chkpt is not None:
+            embedder_pt = torch.load(exp_config.embedder.pretrained_chkpt, "cpu")
+            embedder.load_state_dict(embedder_pt)
+    elif exp_config.embedder.name == "ZaloTop1": 
+        embedder = ZaloSolutions.ZaloSpeechEmbedder()
 
     if device == "cuda":
         embedder = embedder.cuda()
