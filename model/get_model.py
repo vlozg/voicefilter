@@ -6,13 +6,14 @@ from model.ge2e import SpeechEmbedder
 # Voice seperation model
 from model.voicefilter import VoiceFilter
 from model.pse_dccrn import PSE_DCCRN
+from model.pse_dccrn_stft import PSE_DCCRN as PSE_DCCRN_STFT
 
 import importlib
 ZaloSolutions = importlib.import_module("model.ZA-Challenge-Voice.embedder")
 
 def get_embedder(exp_config, train, device):
 
-    if exp_config.embedder.name == "GE2E":
+    if exp_config.embedder.name == "ge2e":
         embedder = SpeechEmbedder(exp_config.embedder)
 
         # Load embedder
@@ -21,6 +22,8 @@ def get_embedder(exp_config, train, device):
             embedder.load_state_dict(embedder_pt)
     elif exp_config.embedder.name == "ZaloTop1": 
         embedder = ZaloSolutions.ZaloSpeechEmbedder()
+    else:
+        raise NotImplementedError("Embedder {exp_config.embedder.name} not implemented in get_embedder")
 
     if device == "cuda":
         embedder = embedder.cuda()
@@ -45,6 +48,12 @@ def get_vfmodel(exp_config, train, device):
         model = VoiceFilter(exp_config.model)
     elif exp_config.model.name == "pse_dccrn":
         model = PSE_DCCRN(exp_config, 
+                    fft_len=exp_config.audio.n_fft,
+                    win_len=exp_config.audio.win_length,
+                    win_inc=exp_config.audio.hop_length,
+                    rnn_units=256,masking_mode='E',use_clstm=True,kernel_num=[32, 64, 128, 256, 256,256])
+    elif exp_config.model.name == "pse_dccrn_stft":
+        model = PSE_DCCRN_STFT(exp_config, 
                     fft_len=exp_config.audio.n_fft,
                     win_len=exp_config.audio.win_length,
                     win_inc=exp_config.audio.hop_length,
@@ -75,6 +84,9 @@ def get_forward(exp_config):
 
     if embedder == "ge2e" and model == "pse_dccrn":
         from model.forward_recipes.ge2e_psedccrn import train_forward, inference_forward
+        return train_forward, inference_forward
+    if embedder == "ge2e" and model == "pse_dccrn_stft":
+        from model.forward_recipes.ge2e_psedccrn_stft import train_forward, inference_forward
         return train_forward, inference_forward
     elif embedder == "ge2e" and model == "voicefilter":
         from model.forward_recipes.ge2e_vf import train_forward, inference_forward
