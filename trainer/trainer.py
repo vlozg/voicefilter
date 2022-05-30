@@ -17,12 +17,13 @@ def trainer(config, pt_dir, trainloader, testloader, writer, logger, hp_str):
     accum = 0
     accum_loss = 0
     it = iter(trainloader) # use iterator instead of for loop
+    device = "cuda" if config.use_cuda else "cpu"
 
 
     # Init model, embedder, optim, criterion
     audio = Audio(config)
-    embedder = get_embedder(config, train=False, device="cuda")
-    model, chkpt = get_vfmodel(config, train=True, device="cuda")
+    embedder = get_embedder(config, train=False, device=device)
+    model, chkpt = get_vfmodel(config, train=True, device=device)
     train_forward, _ = get_forward(config)
     criterion = get_criterion(config)
 
@@ -60,7 +61,7 @@ def trainer(config, pt_dir, trainloader, testloader, writer, logger, hp_str):
             it = iter(trainloader)
 
 
-        _, _, loss = train_forward(model, embedder, batch, criterion, "cuda")
+        _, _, loss = train_forward(model, embedder, batch, criterion, device)
 
         loss.backward()
         accum_loss += loss.item()
@@ -104,4 +105,4 @@ def trainer(config, pt_dir, trainloader, testloader, writer, logger, hp_str):
                 'hp_str': hp_str,
             }, save_path)
             logger.info("Saved checkpoint to: %s" % save_path)
-            validate(model, embedder, testloader, train_forward, criterion, audio, writer, logger, step)
+            validate(model, embedder, testloader, train_forward, criterion, device, audio, writer, logger, step)

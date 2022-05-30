@@ -4,7 +4,7 @@ import numpy as np
 from torch_mir_eval import bss_eval_sources
 
 
-def validate(model, embedder, testloader, train_forward, criterion, audio, writer, logger, step):
+def validate(model, embedder, testloader, train_forward, criterion, device, audio, writer, logger, step):
     model.eval()
     
     with torch.no_grad():
@@ -12,7 +12,7 @@ def validate(model, embedder, testloader, train_forward, criterion, audio, write
         sdrs = []
         for batch in testloader:
             
-            est_stft, est_mask, loss = train_forward(model, embedder, batch, criterion, "cuda")
+            est_stft, est_mask, loss = train_forward(model, embedder, batch, criterion, device)
             
             test_losses.append(loss.item())
            
@@ -32,7 +32,7 @@ def validate(model, embedder, testloader, train_forward, criterion, audio, write
 
         # Take first sample for visualization
         batch = next(iter(testloader))
-        est_stft, est_mask, _ = train_forward(model, embedder, batch, criterion, "cuda")
+        est_stft, est_mask, _ = train_forward(model, embedder, batch, criterion, device)
         est_stft = est_stft[0].cpu().detach().numpy()
         est_mask = est_mask[0].cpu().detach().numpy().T
         
