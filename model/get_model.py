@@ -70,5 +70,8 @@ def get_forward(exp_config):
     if embedder == "ge2e" and model == "pse_dccrn":
         from model.forward_recipes.ge2e_psedccrn import train_forward, inference_forward
         return train_forward, inference_forward
+    elif embedder == "ge2e" and model == "voicefilter":
+        from model.forward_recipes.ge2e_vf import train_forward, inference_forward
+        return train_forward, inference_forward
     else:
         raise NotImplementedError(f"Please implement forward function for {embedder} embedder and {model} model")
