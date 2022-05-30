@@ -6,16 +6,11 @@ experiment:
   dataset:
     name: "generate"
     train:
-      file_path: "datasets/recipes/VivosGenerate_train.csv"
-      detail: ["vivos-train"]
+      file_path: "datasets/recipes/LibriGenerate_train.csv"
+      detail: ["librispeech-train"]
       audio_len: 3.0
       size: 500000
     eval: 
-      file_path: "datasets/recipes/VivosGenerate_eval.csv"
-      detail: ["vivos-test"]
-      audio_len: 3.0
-      size: 100
-    test:
       file_path: "datasets/recipes/LibriGenerate_eval.csv"
       detail: ["librispeech-test"]
       audio_len: 3.0
@@ -23,7 +18,7 @@ experiment:
   
   model:
     name: "pse_dccrn"
-    pretrained_chkpt:
+    pretrained_chkpt: # Leave empty if do train from scratch
     input_dim:  # 8*audio.num_freq + embedder.emb_dim, will get computed in get_model.py
     lstm_dim: 400
     fc1_dim: 600

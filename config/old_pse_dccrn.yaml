@@ -6,13 +6,13 @@ experiment:
   dataset:
     name: "generate"
     train:
-      file_path: "datasets/recipes/VivosGenerate_train.csv"
-      detail: ["vivos-train"]
+      file_path: "datasets/recipes/LibriGenerate_train.csv"
+      detail: ["librispeech-train"]
       audio_len: 3.0
       size: 500000
     eval: 
-      file_path: "datasets/recipes/VivosGenerate_eval.csv"
-      detail: ["vivos-test"]
+      file_path: "datasets/recipes/LibriGenerate_eval.csv"
+      detail: ["librispeech-test"]
       audio_len: 3.0
       size: 100
   
