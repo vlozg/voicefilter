@@ -65,9 +65,8 @@ def inference_forward(model, embedder, batch, device):
     est_stft = model(mixed_stft, dvec)
 
     # Reshape stft in DCCRN format to complex format
-    est_stft = est_stft.transpose(-2,-1)
-    b, t = est_stft.shape[:2]
-    est_stft = torch.view_as_complex(est_stft.reshape(b, t, 2, -1).transpose(-2,-1).contiguous())
+    # (B, 2*F, T) -> (B, T, 2*F)
+    est_stft = torch.view_as_complex(est_stft.transpose(-1, -2).reshape(b, t, 2, -1).transpose(-2, -1).contiguous())
     
     est_mask = est_stft.abs()/mixed_stft.abs()
     
