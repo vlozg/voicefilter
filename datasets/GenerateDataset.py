@@ -1,3 +1,4 @@
+import warnings
 import random
 
 import torch
@@ -26,6 +27,13 @@ class VFDataset(Dataset):
         return len(self.data)
 
     def __getitem__(self, idx):
+        return self.get_item(idx, self.audio)
+
+    def get_item(self, idx, audio):
+        if audio is None:
+            warnings.warn("Only use this function when you want to get audio with custom audio pre-processing")
+            audio = self.audio
+
         s1_dvec = self.data["embedding_utterance_path"].iloc[idx]
         s1_target = self.data["clean_utterance_path"].iloc[idx]
         s2 = self.data["interference_utterance_path"].iloc[idx]
@@ -42,15 +50,6 @@ class VFDataset(Dataset):
         assert len(d.shape) == len(w1.shape) == len(w2.shape) == 1, \
             'wav files must be mono, not stereo'
 
-
-        # LibriSpeech dataset have many silent interval, so let's vad-merge them
-        # VoiceFilter paper didn't do that. To test SDR in same way, don't vad-merge.
-        # if vad == 1:
-        #     w1, w2 = vad_merge(w1), vad_merge(w2)
-
-        # I think random segment length will be better, but let's follow the paper first
-        # fit audio to `hp.data.audio_len` seconds.
-
         if not np.isnan(audio_len):
             w1, w2 = w1[l1:l1+audio_len], w2[l2:l2+audio_len]
         else:
@@ -63,15 +62,15 @@ class VFDataset(Dataset):
         norm = np.max(np.abs(mixed)) * 1.1
         w1, w2, mixed = w1/norm, w2/norm, mixed/norm
 
-        dvec_mel = self.audio.get_mel(d)
+        dvec_mel = audio.get_mel(d)
         dvec_mel = torch.from_numpy(dvec_mel).float()
 
         # magnitude spectrograms (old)
-        target_mag, target_phase = self.audio.wav2spec(w1)
-        mixed_mag, mixed_phase = self.audio.wav2spec(mixed)
+        target_mag, target_phase = audio.wav2spec(w1)
+        mixed_mag, mixed_phase = audio.wav2spec(mixed)
         # STFT, must transpose to get [time, freq] format
-        target_stft = self.audio.stft(w1).T
-        mixed_stft = self.audio.stft(mixed).T
+        target_stft = audio.stft(w1).T
+        mixed_stft = audio.stft(mixed).T
         
         return {
             "dvec_path": s1_dvec, 
@@ -80,6 +79,7 @@ class VFDataset(Dataset):
             "dvec_mel": dvec_mel,
             "dvec_wav": d,
             "target_wav": torch.from_numpy(w1),
+            "interf_wav": torch.from_numpy(w2),
             "mixed_wav": torch.from_numpy(mixed),
             "target_mag": torch.from_numpy(target_mag),
             "target_phase": torch.from_numpy(target_phase),
@@ -91,8 +91,6 @@ class VFDataset(Dataset):
             "interf_segment_start": l2,
             "segment_length": audio_len
         }
-
-
 
 def generate_dataset_df(exp_config, dataset_config, speakers):
     config = exp_config
