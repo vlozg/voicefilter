@@ -20,7 +20,9 @@ if __name__ == '__main__':
     parser.add_argument('-p', '--chkpt', type=str, required=True,
                         help="path to pre-trained VF model checkpoint")
     parser.add_argument('-d', '--data_config', type=str, required=True,
-                        help="yaml files for data used to test and testing configuration. Default: false")
+                        help="yaml files for data used to test and testing configuration")
+    parser.add_argument('--use_cuda', type=bool, default=None,
+                        help="use cuda for testing, overwrite test config. Default: follow test config file")
     args = parser.parse_args()
 
 
@@ -30,7 +32,10 @@ if __name__ == '__main__':
     config = HParam(args.config)
     data_config = HParam(args.data_config)
 
-    config.experiment.use_cuda = data_config.experiment.use_cuda
+    if args.use_cuda is None:
+        config.experiment.use_cuda = data_config.experiment.use_cuda
+    else:
+        config.experiment.use_cuda = args.use_cuda
     config.experiment.dataset = data_config.experiment.dataset
     config.experiment.model.pretrained_chkpt = args.chkpt
 
@@ -70,7 +75,7 @@ if __name__ == '__main__':
     else:
         test_record = dict()
 
-    if test_record.get("data"):
+    if test_record.get("data") or test_record.get("data_config"):
         if test_record["data"] != config.experiment.dataset.test.file_path:
             logger.info("Different dataset file path!")
             logger.info(f"Data path in config: {config.experiment.dataset.test.file_path}")
@@ -78,6 +83,7 @@ if __name__ == '__main__':
             raise Exception("Different dataset file path")
     else:
         test_record["data"] = config.experiment.dataset.test.file_path
+        test_record["config"] = data_config
 
 
     ###
@@ -101,6 +107,7 @@ if __name__ == '__main__':
 
     test_result = {
         "config": args.config,
+        "chkpt": args.chkpt,
         "metrics": test_result
     }
 
