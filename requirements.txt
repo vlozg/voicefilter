@@ -6,7 +6,6 @@ soundfile
 
 # Metrics (SDR) module
 mir_eval
-fast-bss-eval
 torch_mir_eval
 
 # Ultilities
@@ -24,4 +23,4 @@ gdown
 yacs==0.1.4
 
 # Visualize, BI
-jupyter-dash
+jupyter-dash==0.4.2
