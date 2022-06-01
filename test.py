@@ -23,6 +23,8 @@ if __name__ == '__main__':
                         help="yaml files for data used to test and testing configuration")
     parser.add_argument('--use_cuda', type=bool, default=None,
                         help="use cuda for testing, overwrite test config. Default: follow test config file")
+    parser.add_argument('--postfix', type=str, default=None,
+                        help="add postfix to test result name. Default: not add postfix")
     args = parser.parse_args()
 
 
@@ -42,7 +44,8 @@ if __name__ == '__main__':
     exp = config["experiment"]
     env = config["env"]
     test_exp_name = Path(args.data_config).stem # Ex: ../../libri_eval.yaml -> libri_eval
-
+    if args.postfix:
+        exp.name = exp.name + args.postfix
 
     ###
     # Init logger and create dataloader
