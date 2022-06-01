@@ -73,3 +73,11 @@ class Audio():
 
     def denormalize(self, S):
         return (np.clip(S, 0.0, 1.0) - 1.0) * -self.hp.audio.min_level_db
+
+    def silent_len(self, x, top_db=10):
+        clips = librosa.effects.split(x, top_db=top_db)
+        l = 0
+        for c in clips:
+            l += c[1] - c[0]
+
+        return len(x) - l
