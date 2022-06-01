@@ -1,6 +1,5 @@
 experiment:
   name: ""
-  clean_rerun: True # Delete old logs and chkpt if true
   use_cuda: True
   
   dataset:

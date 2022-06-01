@@ -15,6 +15,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', type=str, default='config/best.yaml',
                         help="folder contain yaml files for configuration")
+    parser.add_argument('--clean_rerun', type=bool, default=False,
+                        help="remove old checkpoint and log. Default: false")
     args = parser.parse_args()
 
     config = HParam(args.config)
@@ -30,7 +32,7 @@ if __name__ == '__main__':
     log_dir = os.path.join(env.base_dir, env.log.log_dir, exp.name)
 
     # Cleanup existed logs
-    if exp.clean_rerun:
+    if args.clean_rerun:
         shutil.rmtree(chkpt_dir, ignore_errors=True)
         shutil.rmtree(log_dir, ignore_errors=True)
 
