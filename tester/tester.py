@@ -29,7 +29,6 @@ def tester(config, testloader, logger):
     
     with torch.no_grad():
         test_losses = []
-        sdrs_before = []
         sdrs_after = []
         for batch in tqdm(testloader):
             est_stft, est_mask, loss = train_forward(model, embedder, batch, criterion, device)
@@ -38,24 +37,19 @@ def tester(config, testloader, logger):
             for est_stft_, mixed_wav, target_wav in zip(est_stft, batch["mixed_wav"], batch["target_wav"]):
                 est_wav = audio._istft(est_stft_.T, length=len(target_wav))
                 est_wav = torch.from_numpy(est_wav).to(device=device).reshape(1, -1)
+                
                 target_wav = target_wav.to(device=device).reshape(1, -1)
                 mixed_wav = mixed_wav.to(device=device).reshape(1, -1)
                 
-                #print(est_wav.shape, " ", target_wav.shape, " ", mixed_wav.shape)
-                
-                sdr,sir,sar,perm = bss_eval_sources(target_wav,mixed_wav,compute_permutation=True)
-                sdrs_before.append(sdr)
                 sdr,sir,sar,perm = bss_eval_sources(target_wav,est_wav,compute_permutation=True)
                 sdrs_after.append(sdr)
-                #sdrs_after.append(sdr(target_wav, est_wav))
+
         test_losses = np.array(test_losses)
-        sdrs_before = np.array(sdrs_before)
         sdrs_after = np.array(sdrs_after)
                                 
         logger.info(f"Complete testing")
 
     return {
         "loss": test_losses, 
-        # "sdr_before": sdrs_before, 
         "sdr": sdrs_after,
     }
