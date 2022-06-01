@@ -52,6 +52,7 @@ class VFDataset(Dataset):
 
         if not np.isnan(audio_len):
             w1, w2 = w1[l1:l1+audio_len], w2[l2:l2+audio_len]
+            w1_len, w2_len = w1.shape[0], w2.shape[0]
         else:
             w1, w2 = w1[l1:], w2[l2:]
             w1_len, w2_len = w1.shape[0], w2.shape[0]
