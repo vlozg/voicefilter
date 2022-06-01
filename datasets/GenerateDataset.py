@@ -54,7 +54,8 @@ class VFDataset(Dataset):
             w1, w2 = w1[l1:l1+audio_len], w2[l2:l2+audio_len]
         else:
             w1, w2 = w1[l1:], w2[l2:]
-            max_len = max(w1.shape[0], w2.shape[0])
+            w1_len, w2_len = w1.shape[0], w2.shape[0]
+            max_len = max(w1_len, w2_len)
             w1 = np.pad(w1, (0, max(0, max_len - w1.shape[0])), constant_values = 0)
             w2 = np.pad(w2, (0, max(0, max_len - w2.shape[0])), constant_values = 0)
         mixed = w1 + w2
@@ -79,7 +80,9 @@ class VFDataset(Dataset):
             "dvec_mel": dvec_mel,
             "dvec_wav": d,
             "target_wav": torch.from_numpy(w1),
+            "target_len": w1_len,
             "interf_wav": torch.from_numpy(w2),
+            "interf_len": w1_len,
             "mixed_wav": torch.from_numpy(mixed),
             "target_mag": torch.from_numpy(target_mag),
             "target_phase": torch.from_numpy(target_phase),
