@@ -28,15 +28,16 @@ experiment:
   loss_function: "power_law_compressed"
 
   train:
-    batch_size: 4
+    batch_size: 8
     num_workers: 8
-    grad_accumulate: 2
+    grad_accumulate: 1
     optimizer: "adam"
     optimizer_param: 
       lr: 0.001
     max_step: 500000
     summary_interval: 1
     checkpoint_interval: 5000
+    backup_interval: 1000
   
   embedder: # d-vector embedder. don"t fix it!
     name: "ge2e"

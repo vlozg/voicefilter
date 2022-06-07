@@ -17,6 +17,8 @@ if __name__ == '__main__':
                         help="folder contain yaml files for configuration")
     parser.add_argument('--clean_rerun', type=bool, default=False,
                         help="remove old checkpoint and log. Default: false")
+    parser.add_argument('r', '--resume', type=bool, default=False,
+                        help="resume from checkpoint. Default: false")
     args = parser.parse_args()
 
     config = HParam(args.config)
@@ -57,6 +59,12 @@ if __name__ == '__main__':
     testloader = create_dataloader(config, scheme="eval")
     logger.info("Start making train set")
     trainloader = create_dataloader(config, scheme="train")
+
+    if args.resume:
+        logger.info(f"Resume training from checkpoint {args.resume}")
+        if args.resume == "backup":
+            args.resume = os.path.join(chkpt_dir, 'backup.pt')
+        exp["model"]["pretrained_chkpt"] = args.resume
 
     try:
         trainer(exp, chkpt_dir, trainloader, testloader, writer, logger, hp_str)

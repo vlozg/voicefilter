@@ -95,6 +95,18 @@ def trainer(config, pt_dir, trainloader, testloader, writer, logger, hp_str):
 
         accum_loss = 0
 
+        # save a beckup checkpoint file if backup interval configured
+        if config.train.get("beckup_interval"):
+            if step % config.train.beckup_interval == 0:
+                save_path = os.path.join(pt_dir, 'backup.pt')
+                torch.save({
+                    'model': model.state_dict(),
+                    'optimizer': optimizer.state_dict(),
+                    'step': step,
+                    'hp_str': hp_str,
+                }, save_path)
+                logger.info("Backuped at step %d" % step)
+
         # save checkpoint file
         if step % config.train.checkpoint_interval == 0:
             save_path = os.path.join(pt_dir, 'chkpt_%d.pt' % step)
