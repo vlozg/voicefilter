@@ -1,21 +1,16 @@
 experiment:
-  name: "old_powlaw_loss_finetune"
+  name: "power_law_zalo_embedder"
   clean_rerun: True # Delete old logs and chkpt if true
-  use_cuda: False
+  use_cuda: True
   
   dataset:
     name: "generate"
     train:
-      file_path: "datasets/recipes/VivosGenerate_train.csv"
-      detail: ["vivos-train"]
+      file_path: "datasets/recipes/LibriGenerate_train.csv"
+      detail: ["librispeech-train"]
       audio_len: 3.0
       size: 500000
     eval: 
-      file_path: "datasets/recipes/VivosGenerate_eval.csv"
-      detail: ["vivos-test"]
-      audio_len: 3.0
-      size: 100
-    test:
       file_path: "datasets/recipes/LibriGenerate_eval.csv"
       detail: ["librispeech-test"]
       audio_len: 3.0
@@ -23,8 +18,7 @@ experiment:
   
   model:
     name: "voicefilter"
-    pretrained_chkpt: "chkpt/powlaw_loss_finetune/chkpt_178000.pt"
-    resume_from_chkpt: False
+    pretrained_chkpt:
     input_dim:  # 8*audio.num_freq + embedder.emb_dim, will get computed in get_model.py
     lstm_dim: 400
     fc1_dim: 600
@@ -39,22 +33,16 @@ experiment:
     grad_accumulate: 8
     optimizer: "adam"
     optimizer_param: 
-      lr: 0.0001
+      lr: 0.001
     max_step: 500000
     summary_interval: 1
     checkpoint_interval: 5000
-    backup_interval: 1000
   
   embedder: # d-vector embedder. don"t fix it!
-    name: "ge2e"
-    pretrained_chkpt: "embedder.pt"
+    name: "ZaloTop1"
     num_mels: 40
     n_fft: 512
-    emb_dim: 256
-    lstm_hidden: 768
-    lstm_layers: 3
-    window: 80
-    stride: 40
+    emb_dim: 512
   
   audio:
     n_fft: 1200

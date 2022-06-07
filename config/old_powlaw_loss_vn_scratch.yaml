@@ -1,7 +1,7 @@
 experiment:
-  name: "old_powlaw_loss_finetune"
+  name: "old_powlaw_loss_vn_scratch"
   clean_rerun: True # Delete old logs and chkpt if true
-  use_cuda: False
+  use_cuda: True
   
   dataset:
     name: "generate"
@@ -16,15 +16,14 @@ experiment:
       audio_len: 3.0
       size: 100
     test:
-      file_path: "datasets/recipes/LibriGenerate_eval.csv"
-      detail: ["librispeech-test"]
-      audio_len: 3.0
-      size: 100
+      file_path: "datasets/recipes/VivosGenerate_test.csv"
+      detail: ["vivos-train", "vivos-test"]
+      audio_len: # varying audio length
+      size: 10000
   
   model:
     name: "voicefilter"
-    pretrained_chkpt: "chkpt/powlaw_loss_finetune/chkpt_178000.pt"
-    resume_from_chkpt: False
+    pretrained_chkpt:
     input_dim:  # 8*audio.num_freq + embedder.emb_dim, will get computed in get_model.py
     lstm_dim: 400
     fc1_dim: 600
@@ -39,11 +38,10 @@ experiment:
     grad_accumulate: 8
     optimizer: "adam"
     optimizer_param: 
-      lr: 0.0001
+      lr: 0.001
     max_step: 500000
     summary_interval: 1
     checkpoint_interval: 5000
-    backup_interval: 1000
   
   embedder: # d-vector embedder. don"t fix it!
     name: "ge2e"
