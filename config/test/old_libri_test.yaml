@@ -1,0 +1,10 @@
+experiment:
+  use_cuda: True
+  
+  dataset:
+    name: "generate" 
+    test:
+      file_path: "datasets/recipes/Old_LibriSpeechGenerateDataset.csv"
+      detail: ["librispeech-test"]
+      audio_len: 3
+      size: 5000

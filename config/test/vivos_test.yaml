@@ -1,0 +1,10 @@
+experiment:
+  use_cuda: True
+  
+  dataset:
+    name: "generate" 
+    test:
+      file_path: "datasets/recipes/VivosGenerate_test.csv"
+      detail: ["vivos-test"]
+      audio_len: # varying audio length
+      size: 10000
