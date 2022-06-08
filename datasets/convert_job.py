@@ -23,7 +23,7 @@ def resample(p, sr=16000):
         track = AudioSegment.from_file(p).set_frame_rate(sr)
         new_path = Path.joinpath(p.parent, "16k_" + p.with_suffix(".wav").name)
         track.export(new_path, format='wav')
-        p.unlink(missing_ok=True) # Remove old file
+        p.unlink() # Remove old file
 
 def job_to16khz(d):
     wav_list=list(Path(d).rglob("*.wav"))
