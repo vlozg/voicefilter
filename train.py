@@ -17,7 +17,7 @@ if __name__ == '__main__':
                         help="folder contain yaml files for configuration")
     parser.add_argument('--clean_rerun', type=bool, default=False,
                         help="remove old checkpoint and log. Default: false")
-    parser.add_argument('r', '--resume', type=bool, default=False,
+    parser.add_argument('-r', '--resume', type=bool, default=False,
                         help="resume from checkpoint. Default: false")
     args = parser.parse_args()
 
