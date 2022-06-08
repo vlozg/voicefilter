@@ -3,6 +3,7 @@ torch>=1.10.0
 numpy
 librosa==0.8.1
 soundfile
+pydub
 
 # Metrics (SDR) module
 mir_eval
@@ -24,3 +25,5 @@ yacs==0.1.4
 
 # Visualize, BI
 jupyter-dash==0.4.2
+
+torchmetrics
