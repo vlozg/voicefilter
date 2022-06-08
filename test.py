@@ -25,6 +25,8 @@ if __name__ == '__main__':
                         help="use cuda for testing, overwrite test config. Default: follow test config file")
     parser.add_argument('--postfix', type=str, default=None,
                         help="add postfix to test result name. Default: not add postfix")
+    parser.add_argument('--skip_exist', type=bool, default=False,
+                        help="skip testing if result exist. Default: False")
     args = parser.parse_args()
 
 
@@ -88,6 +90,10 @@ if __name__ == '__main__':
         test_record["data"] = config.experiment.dataset.test.file_path
         test_record["config"] = data_config
 
+    if args.skip_exist and test_record.get(exp.name):
+        # Test result on same model exist
+        logger.info(f"Test result for experiment name {exp.name} exits. Abort this test.")
+        exit()
 
     ###
     # Conduct testing
