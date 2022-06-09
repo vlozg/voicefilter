@@ -22,8 +22,8 @@ def validate(model, embedder, testloader, train_forward, criterion, device, audi
                 est_wav = audio._istft(est_stft_.T, length=len(target_wav))
                 est_wav = torch.from_numpy(est_wav).reshape(1, -1)
                 target_wav = target_wav.reshape(1, -1)
-                sdr,sir,sar,perm = bss_eval_sources(target_wav,est_wav,compute_permutation=True)
-                sdrs.append(sdr)
+                sdr,sir,sar,perm = bss_eval_sources(target_wav,est_wav,compute_permutation=False)
+                sdrs.append(sdr.item())
         
         test_loss = np.array(test_losses).mean()
         sdr_mean = np.array(sdrs).mean()

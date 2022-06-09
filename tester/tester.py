@@ -41,7 +41,11 @@ def tester(config, testloader, logger):
                 target_wav = target_wav.to(device=device).reshape(1, -1)
                 mixed_wav = mixed_wav.to(device=device).reshape(1, -1)
                 
-                sdr,sir,sar,perm = bss_eval_sources(target_wav,est_wav,compute_permutation=True)
+                if target_wav.sum() != 0 and mixed_wav.sum() != 0 and est_wav.sum() != 0:
+                    sdr,sir,sar,perm = bss_eval_sources(target_wav,est_wav,compute_permutation=False)
+                    sdr = sdr.item()
+                else: 
+                    sdr = None
                 sdrs_after.append(sdr)
 
         test_losses = np.array(test_losses)
