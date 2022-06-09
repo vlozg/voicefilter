@@ -8,6 +8,7 @@ import pandas as pd
 
 from torch.utils.data import Dataset
 from utils.audio import Audio
+import tqdm as tqdm
 
 def vad_merge(w):
     intervals = librosa.effects.split(w, top_db=20)
@@ -111,7 +112,10 @@ def generate_dataset_df(exp_config, dataset_config, speakers):
     l1s = list()
     l2s = list()
 
+
+    print('Generating ',dataset_config.detail[0],' dataset (save in file',dataset_config.file_path,'):')
     i=0
+    pbar = tqdm.tqdm(total = dataset_config.size)
 
     while i<dataset_config.size:
         # Random 2 speaker
@@ -157,7 +161,10 @@ def generate_dataset_df(exp_config, dataset_config, speakers):
         l2s.append(l2)
 
         i += 1
+        pbar.update(1)
 
+    pbar.close()
+    
     df=pd.DataFrame(
         {'clean_utterance_path': s1_targets
         ,'embedding_utterance_path': s1_dvecs
