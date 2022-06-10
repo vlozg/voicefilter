@@ -10,8 +10,13 @@ from utils.hparams import HParam
 from model.get_model import get_vfmodel, get_embedder, get_forward
 from loss.get_criterion import get_criterion
 from datasets.GenerateDataset import vad_merge
+
+from torch_mir_eval import bss_eval_sources
+
 import soundfile
 from tqdm import tqdm
+
+import json
 
 
 if __name__ == '__main__':
@@ -26,6 +31,8 @@ if __name__ == '__main__':
                         help='path of mixed wav file')
     parser.add_argument('-r', '--reference_path', type=str, required=True,
                         help='path of reference wav file')
+    parser.add_argument('--ground_truth_path', type=str,
+                        help='path of ground truth wav file. Add this to get evaluate metrics result.')
     parser.add_argument('-o', '--out_path', type=str, required=True,
                         help='path of file to output')
     parser.add_argument('--is_directory', type=bool, default=False,
@@ -58,17 +65,24 @@ if __name__ == '__main__':
         file_list = [x.split("/")[-1] for x in glob.glob(os.path.join(args.mixed_path, '**', "*.wav"), recursive=True)]
         mixed_list = [os.path.join(args.mixed_path, x) for x in file_list]
         reference_list = [os.path.join(args.reference_path, x) for x in file_list]
+        if args.ground_truth_path:
+            groundtruth_list = [os.path.join(args.ground_truth_path, x) for x in file_list]
+        else:
+            groundtruth_list = [None]*len(file_list)
         out_list = [os.path.join(args.out_path, x) for x in file_list]
     else:
         mixed_list = [args.mixed_path]
         reference_list = [args._reference_path]
+        groundtruth_list = [args.ground_truth_path if args.ground_truth_path else None]
         out_list = [args.out_path]
 
 
     ###
     # Start infernce
     ###
-    for mixed_file, reference_file, out_file in tqdm(zip(mixed_list, reference_list, out_list)):
+    sdrs_after = []
+    sdrs_before = []
+    for mixed_file, reference_file, groundtruth_file, out_file in tqdm(zip(mixed_list, reference_list, groundtruth_list, out_list), total=len(mixed_list)):
         with torch.no_grad():
             d, _ = librosa.load(reference_file, sr=config.audio.sample_rate)
             mixed_wav, _ = librosa.load(mixed_file, sr=config.audio.sample_rate)
@@ -91,7 +105,39 @@ if __name__ == '__main__':
             est_stft, est_mask = inference_forward(model, embedder, batch, device)
             est_stft = est_stft.cpu().detach().numpy()
             est_wav = audio._istft(est_stft[0].T, length=len(mixed_wav))
+
+            if groundtruth_file:
+                target_wav, _ = librosa.load(groundtruth_file, sr=config.audio.sample_rate)
+                target_wav = target_wav/norm
+                _est_wav = torch.from_numpy(est_wav).to(device=device).reshape(1, -1)
+                target_wav = torch.from_numpy(target_wav).to(device=device).reshape(1, -1)
+                mixed_wav = torch.from_numpy(mixed_wav).to(device=device).reshape(1, -1)
+
+                if target_wav.sum() != 0 and _est_wav.sum() != 0:
+                    sdr,sir,sar,perm = bss_eval_sources(target_wav,_est_wav,compute_permutation=False)
+                    sdr = sdr.item()
+                else: 
+                    sdr = None
+                sdrs_after.append(sdr)
+
+                if target_wav.sum() != 0 and mixed_wav.sum() != 0:
+                    sdr,sir,sar,perm = bss_eval_sources(target_wav,mixed_wav,compute_permutation=False)
+                    sdr = sdr.item()
+                else: 
+                    sdr = None
+                sdrs_before.append(sdr)
+
         
         out_dir = os.path.dirname(out_file)
         os.makedirs(out_dir if out_dir != '' else ".", exist_ok=True)
         soundfile.write(out_file, est_wav, config.audio.sample_rate)
+
+    
+    if args.ground_truth_path:
+        test_result = {
+            "sdrs_before": sdrs_before,
+            "sdrs_after": sdrs_after
+        }
+        json_object = json.dumps(test_result, indent = 4)
+        with open(os.path.join(args.out_path, "test_result.json"), "w") as f:
+            f.write(json_object)
