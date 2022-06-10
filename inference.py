@@ -32,8 +32,20 @@ if __name__ == '__main__':
                         help="path above is directory of file. Default: False")
     args = parser.parse_args()
 
-    config = HParam(args.config)["experiment"]
+    ###
+    # Merge config with CLI parameters
+    ###
+    config = HParam(args.config)
+    
+    if args.use_cuda is not None:
+        config.experiment.use_cuda = args.use_cuda
+    config.experiment.model.pretrained_chkpt = args.chkpt
 
+    config = config["experiment"]
+
+    ###
+    # Load model
+    ###
     audio = Audio(config)
     device = "cuda" if config.use_cuda else "cpu"
     embedder = get_embedder(config, train=False, device=device)
@@ -53,14 +65,16 @@ if __name__ == '__main__':
         out_list = [args.out_path]
 
 
+    ###
+    # Start infernce
+    ###
     for mixed_file, reference_file, out_file in tqdm(zip(mixed_list, reference_list, out_list)):
         with torch.no_grad():
             d, _ = librosa.load(reference_file, sr=config.audio.sample_rate)
             mixed_wav, _ = librosa.load(mixed_file, sr=config.audio.sample_rate)
 
-            mixed_wav = mixed_wav/(np.max(np.abs(mixed_wav))*1.1)
-            d = d/np.max(np.abs(d)) # Normalize volume
-            d = vad_merge(d) # Then VAD
+            norm = np.max(np.abs(mixed_wav)) * 1.1
+            mixed_wav = mixed_wav/norm
 
             dvec_mel = audio.get_mel(d)
             dvec_mel = torch.from_numpy(dvec_mel).float()
@@ -81,4 +95,3 @@ if __name__ == '__main__':
         out_dir = os.path.dirname(out_file)
         os.makedirs(out_dir if out_dir != '' else ".", exist_ok=True)
         soundfile.write(out_file, est_wav, config.audio.sample_rate)
-        soundfile.write("test_results/vin_asr/dvec/"+os.path.basename(out_file), d, config.audio.sample_rate)
