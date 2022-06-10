@@ -10,8 +10,8 @@ from torch.utils.data import Dataset
 from utils.audio import Audio
 import tqdm as tqdm
 
-def vad_merge(w):
-    intervals = librosa.effects.split(w, top_db=20)
+def vad_merge(w, top_db=20):
+    intervals = librosa.effects.split(w, top_db=top_db)
     temp = list()
     for s, e in intervals:
         temp.append(w[s:e])
