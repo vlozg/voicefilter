@@ -9,6 +9,7 @@ from utils.hparams import HParam
 
 from model.get_model import get_vfmodel, get_embedder, get_forward
 from loss.get_criterion import get_criterion
+from datasets.GenerateDataset import vad_merge
 import soundfile
 from tqdm import tqdm
 
@@ -57,8 +58,9 @@ if __name__ == '__main__':
             d, _ = librosa.load(reference_file, sr=config.audio.sample_rate)
             mixed_wav, _ = librosa.load(mixed_file, sr=config.audio.sample_rate)
 
-            norm = np.max(np.abs(mixed_wav)) * 1.1
-            mixed_wav = mixed_wav/norm
+            mixed_wav = mixed_wav/(np.max(np.abs(mixed_wav))*1.1)
+            d = d/np.max(np.abs(d)) # Normalize volume
+            d = vad_merge(d) # Then VAD
 
             dvec_mel = audio.get_mel(d)
             dvec_mel = torch.from_numpy(dvec_mel).float()
@@ -79,3 +81,4 @@ if __name__ == '__main__':
         out_dir = os.path.dirname(out_file)
         os.makedirs(out_dir if out_dir != '' else ".", exist_ok=True)
         soundfile.write(out_file, est_wav, config.audio.sample_rate)
+        soundfile.write("test_results/vin_asr/dvec/"+os.path.basename(out_file), d, config.audio.sample_rate)
