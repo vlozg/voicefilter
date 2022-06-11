@@ -5,21 +5,25 @@ import torch.nn as nn
 from torch.profiler import profile, record_function, ProfilerActivity
 
 def __forward(model, embedder, batch, device):
-    dvec_mels = batch["dvec"]
+    # Get stft feature, then move to cuda
     mixed_stft = batch["mixed_stft"]
+    if device == "cuda": mixed_stft = mixed_stft.cuda(non_blocking=True)
 
-    # Move to cuda
-    if device == "cuda":
-        mixed_stft = mixed_stft.cuda(non_blocking=True)
-        dvec_mels = [mel.cuda(non_blocking=True) for mel in dvec_mels]
+    # Get dvec, forward pass to embedder if not precomputed
+    if batch.get("dvec_tensor"):
+        dvec = batch["dvec_tensor"]
+        if device == "cuda": dvec = dvec.cuda(non_blocking=True)
+    else:
+        dvec_mels = batch["dvec"]
+        if device == "cuda": dvec_mels = [mel.cuda(non_blocking=True) for mel in dvec_mels]
 
-    # Get dvec
-    dvec_list = list()
-    for mel in dvec_mels:
-        dvec = embedder(mel)
-        dvec_list.append(dvec)
-    dvec = torch.stack(dvec_list, dim=0)
-    dvec = dvec.detach()
+        # Get dvec
+        dvec_list = list()
+        for mel in dvec_mels:
+            dvec = embedder(mel)
+            dvec_list.append(dvec)
+        dvec = torch.stack(dvec_list, dim=0)
+        dvec = dvec.detach()
 
     # Reshape stft to match with DCCRN format
     # (B, T, F_2) -> (B, T, F, 2) -> (B, T, 2, F) -> (B, T, 2*F) -> (B, 2*F, T)

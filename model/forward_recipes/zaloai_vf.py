@@ -5,21 +5,25 @@ import torch.nn as nn
 from torch.profiler import profile, record_function, ProfilerActivity
 
 def __forward(model, embedder, batch, device):
-    dvec_wavs = batch["dvec_wav"]
+    # Get stft feature, then move to cuda
     mixed_stft = batch["mixed_stft"]
+    if device == "cuda": mixed_stft = mixed_stft.cuda(non_blocking=True)
 
-    # Move to cuda
-    if device == "cuda":
-        mixed_stft = mixed_stft.cuda(non_blocking=True)
-        dvec_wavs = [torch.from_numpy(w).unsqueeze(0).cuda(non_blocking=True) for w in dvec_wavs]
+    # Get dvec, forward pass to embedder if not precomputed
+    if batch.get("dvec_tensor"):
+        dvec = batch["dvec_tensor"]
+        if device == "cuda": dvec = dvec.cuda(non_blocking=True)
+    else:
+        dvec_wavs = batch["dvec_wav"]
+        if device == "cuda": dvec_wavs = [torch.from_numpy(w).unsqueeze(0).cuda(non_blocking=True) for w in dvec_wavs]
 
-    # Get dvec
-    dvec_list = list()
-    for w in dvec_wavs:
-        dvec = embedder(w)
-        dvec_list.append(dvec[0])
-    dvec = torch.stack(dvec_list, dim=0)
-    dvec = dvec.detach()
+        # Get dvec
+        dvec_list = list()
+        for w in dvec_wavs:
+            dvec = embedder(w)
+            dvec_list.append(dvec[0])
+        dvec = torch.stack(dvec_list, dim=0)
+        dvec = dvec.detach()
 
     est_mask = model(torch.pow(mixed_stft.abs(), 0.3), dvec)
     est_stft = mixed_stft*torch.pow(est_mask, 10/3)
