@@ -24,6 +24,6 @@ class L2AsymLoss(nn.Module):
     
   def forward(self, input: Tensor, target: Tensor) -> Tensor:    
     delta = target - input
-    loss = torch.where(delta <= 0, delta.self.alpha, delta.self.beta)
+    loss = torch.where(delta <= 0, delta*self.alpha, delta*self.beta)
     loss = torch.pow(loss, 2)
     return self.reduce(loss)
