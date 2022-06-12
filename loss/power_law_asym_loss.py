@@ -9,8 +9,8 @@ class PowerLawCompAsymLoss(nn.Module):
   def __init__(self, 
                power: float = 0.3,
                complex_loss_ratio: float = 0.113,
-               undersuppress_penalty=1,
-               oversuppress_penalty=10,
+               undersuppress_penalty=0,
+               oversuppress_penalty=1,
                l2_asym_loss_ratio: float = 1.0,
                reduction: str = 'mean') -> None:
     super(PowerLawCompAsymLoss, self).__init__()
@@ -42,4 +42,4 @@ class PowerLawCompAsymLoss(nn.Module):
     # Oversuperession loss
     os_loss = self.l2_asym(input_mag, target_mag)
 
-    return magnitude_loss + self.alpha * complex_loss + self.beta * os_loss
+    return (1-self.alpha) * magnitude_loss + self.alpha * complex_loss + self.beta * os_loss
