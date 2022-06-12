@@ -9,6 +9,7 @@ def create_dataloader(config, scheme):
     def train_collate_fn(batch):
         dvecs = list()
         dvec_wavs = list()
+        dvec_tensors = list()
         target_wavs = list()
         mixed_wavs = list()
         target_stfts = list()
@@ -21,6 +22,8 @@ def create_dataloader(config, scheme):
         for sample in batch:
             dvecs.append(sample["dvec_mel"])
             dvec_wavs.append(sample["dvec_wav"])
+            if sample.get("dvec_tensor") is not None:
+                dvec_tensors.append(sample["dvec_tensor"])
             target_wavs.append(sample["target_wav"])
             mixed_wavs.append(sample["mixed_wav"])
             target_stfts.append(sample["target_stft"])
@@ -39,7 +42,7 @@ def create_dataloader(config, scheme):
         target_mags = pad_sequence(target_mags, batch_first=True)
         target_phases = pad_sequence(target_phases, batch_first=True)
 
-        return {
+        features = {
             "dvec": dvecs, 
             "dvec_wav": dvec_wavs,
             "target_wav": target_wavs,
@@ -52,9 +55,16 @@ def create_dataloader(config, scheme):
             "mixed_phase": mixed_phases
         }
 
+        if len(dvec_tensors) > 0:
+            dvec_tensors = torch.stack(dvec_tensors, dim=0)
+            features.update({"dvec_tensor": dvec_tensors})
+        
+        return features
+
     def test_collate_fn(batch):
         dvecs = list()
         dvec_wavs = list()
+        dvec_tensors = list()
         target_wavs = list()
         mixed_wavs = list()
         target_stfts = list()
@@ -67,6 +77,8 @@ def create_dataloader(config, scheme):
         for sample in batch:
             dvecs.append(sample["dvec_mel"])
             dvec_wavs.append(sample["dvec_wav"])
+            if sample.get("dvec_tensor") is not None:
+                dvec_tensors.append(sample["dvec_tensor"])            
             target_wavs.append(sample["target_wav"])
             mixed_wavs.append(sample["mixed_wav"])
             target_stfts.append(sample["target_stft"])
@@ -85,7 +97,7 @@ def create_dataloader(config, scheme):
         target_mags = pad_sequence(target_mags, batch_first=True)
         target_phases = pad_sequence(target_phases, batch_first=True)
 
-        return {
+        features = {
             "dvec": dvecs, 
             "dvec_wav": dvec_wavs,
             "target_wav": target_wavs,
@@ -97,6 +109,12 @@ def create_dataloader(config, scheme):
             "target_mag": target_mags, 
             "tagret_phase": target_phases
         }
+
+        if len(dvec_tensors) > 0:
+            dvec_tensors = torch.stack(dvec_tensors, dim=0)
+            features.update({"dvec_tensor": dvec_tensors})
+        
+        return features
 
     # Genearate dataset
     dataset = get_dataset(config, scheme)

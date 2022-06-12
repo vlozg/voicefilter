@@ -4,7 +4,7 @@ import glob
 from .GenerateDataset import VFDataset, generate_dataset_df
 from .GGSpeakerIDDataset import VFGGDataset
 
-def get_dataset(config, scheme):
+def get_dataset(config, scheme, features="all"):
     dataset_config = config.experiment.dataset[scheme]
 
     # Genearate dataset
@@ -63,7 +63,7 @@ def get_dataset(config, scheme):
             dataset_df = generate_dataset_df(config.experiment, dataset_config, speakers=speaker_sets)
             dataset_df.to_csv(dataset_path,index=False)
 
-        return VFDataset(config.experiment, dataset_path=dataset_path)
+        return VFDataset(config.experiment, dataset_path=dataset_path, features=features)
 
     elif config.experiment.dataset.name == "gg":
         return VFGGDataset(config.experiment, dataset=dataset_config, base_dir=".")

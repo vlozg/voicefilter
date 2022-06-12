@@ -10,18 +10,25 @@ from torch.utils.data import Dataset
 from utils.audio import Audio
 import tqdm as tqdm
 
-def vad_merge(w, top_db=20):
-    intervals = librosa.effects.split(w, top_db=top_db)
+def vad_merge(w, top_db=20, ref=None):
+    if ref:
+        intervals = librosa.effects.split(w, top_db=top_db)
+    else:
+        intervals = librosa.effects.split(w, top_db=top_db, ref=ref)
     temp = list()
     for s, e in intervals:
         temp.append(w[s:e])
     return np.concatenate(temp, axis=None)
 
 class VFDataset(Dataset):
-    def __init__(self, config, dataset_path):
+    def __init__(self, config, dataset_path, features="all"):
         self.sr = config.audio.sample_rate
         self.audio = Audio(config)
         self.data = pd.read_csv(dataset_path)
+        if type(features) is list:
+            self.features = features
+        elif features == "all":
+            self.features = ["stft", "dvec_mel", "spec"]
 
 
     def __len__(self):
@@ -35,15 +42,26 @@ class VFDataset(Dataset):
             warnings.warn("Only use this function when you want to get audio with custom audio pre-processing")
             audio = self.audio
 
-        s1_dvec = self.data["embedding_utterance_path"].iloc[idx]
-        s1_target = self.data["clean_utterance_path"].iloc[idx]
-        s2 = self.data["interference_utterance_path"].iloc[idx]
-        l1 = self.data["clean_segment_start"].iloc[idx]
-        l2 = self.data["interference_segment_start"].iloc[idx]
-        audio_len = self.data["segment_length"].iloc[idx]
+        meta = self.data.iloc[idx].to_dict()
+        s1_dvec = meta["embedding_utterance_path"]
+        s1_target = meta["clean_utterance_path"]
+        s2 = meta["interference_utterance_path"]
+        l1 = meta["clean_segment_start"]
+        l2 = meta["interference_segment_start"]
+        audio_len = meta["segment_length"]
 
         if not np.isnan(audio_len):
             audio_len = int(audio_len*self.sr)
+
+        features_dict = {
+            "dvec_path": s1_dvec, 
+            "target_path": s1_target, 
+            "interf_path": s2,
+            "target_segment_start": l1,
+            "interf_segment_start": l2,
+            "segment_length": audio_len
+        }
+
 
         d, _ = librosa.load(s1_dvec, sr=self.sr)
         w1, _ = librosa.load(s1_target, sr=self.sr)
@@ -65,37 +83,47 @@ class VFDataset(Dataset):
         norm = np.max(np.abs(mixed)) * 1.1
         w1, w2, mixed = w1/norm, w2/norm, mixed/norm
 
-        dvec_mel = audio.get_mel(d)
-        dvec_mel = torch.from_numpy(dvec_mel).float()
-
-        # magnitude spectrograms (old)
-        target_mag, target_phase = audio.wav2spec(w1)
-        mixed_mag, mixed_phase = audio.wav2spec(mixed)
-        # STFT, must transpose to get [time, freq] format
-        target_stft = audio.stft(w1).T
-        mixed_stft = audio.stft(mixed).T
-        
-        return {
-            "dvec_path": s1_dvec, 
-            "target_path": s1_target, 
-            "interf_path": s2,
-            "dvec_mel": dvec_mel,
+        features_dict.update({
             "dvec_wav": d,
             "target_wav": torch.from_numpy(w1),
             "target_len": w1_len,
             "interf_wav": torch.from_numpy(w2),
             "interf_len": w1_len,
             "mixed_wav": torch.from_numpy(mixed),
-            "target_mag": torch.from_numpy(target_mag),
-            "target_phase": torch.from_numpy(target_phase),
-            "mixed_mag": torch.from_numpy(mixed_mag),
-            "mixed_phase": torch.from_numpy(mixed_phase),
-            "target_stft": torch.from_numpy(target_stft),
-            "mixed_stft": torch.from_numpy(mixed_stft),
-            "target_segment_start": l1,
-            "interf_segment_start": l2,
-            "segment_length": audio_len
-        }
+        })
+
+        if "dvec_mel" in self.features:
+            if meta.get("dvec_tensor_path"):
+                dvec = torch.load(meta["dvec_tensor_path"], "cpu")
+                dvec_mel = None
+                features_dict.update({"dvec_tensor": dvec})
+            else:
+                dvec_mel = audio.get_mel(d)
+                dvec_mel = torch.from_numpy(dvec_mel).float()
+            
+            features_dict.update({"dvec_mel": dvec_mel})
+
+        # magnitude spectrograms (old)
+        if "spec" in self.features:
+            target_mag, target_phase = audio.wav2spec(w1)
+            mixed_mag, mixed_phase = audio.wav2spec(mixed)
+            features_dict.update({
+                "target_mag": torch.from_numpy(target_mag),
+                "target_phase": torch.from_numpy(target_phase),
+                "mixed_mag": torch.from_numpy(mixed_mag),
+                "mixed_phase": torch.from_numpy(mixed_phase),
+            })
+
+        # STFT, must transpose to get [time, freq] format
+        if "stft" in self.features:
+            target_stft = audio.stft(w1).T
+            mixed_stft = audio.stft(mixed).T
+            features_dict.update({
+                "target_stft": torch.from_numpy(target_stft),
+                "mixed_stft": torch.from_numpy(mixed_stft),
+            })
+        
+        return features_dict
 
 def generate_dataset_df(exp_config, dataset_config, speakers):
     config = exp_config

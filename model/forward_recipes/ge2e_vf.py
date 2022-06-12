@@ -7,7 +7,7 @@ from torch.profiler import profile, record_function, ProfilerActivity
 
 
 def __get_dvec(embedder, batch, device):
-    if batch.get("dvec_tensor"):
+    if batch.get("dvec_tensor") is not None:
         dvec = batch["dvec_tensor"]
         if device == "cuda": dvec = dvec.cuda(non_blocking=True)
     else:
