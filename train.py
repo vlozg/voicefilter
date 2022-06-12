@@ -17,7 +17,7 @@ if __name__ == '__main__':
                         help="folder contain yaml files for configuration")
     parser.add_argument('--clean_rerun', type=bool, default=False,
                         help="remove old checkpoint and log. Default: false")
-    parser.add_argument('-r', '--resume', type=bool, default=False,
+    parser.add_argument('-r', '--resume', type=str, default="backup",
                         help="resume from checkpoint. Default: false")
     args = parser.parse_args()
 
@@ -61,10 +61,12 @@ if __name__ == '__main__':
     trainloader = create_dataloader(config, scheme="train")
 
     if args.resume:
-        logger.info(f"Resume training from checkpoint {args.resume}")
         if args.resume == "backup":
             args.resume = os.path.join(chkpt_dir, 'backup.pt')
-        exp["model"]["pretrained_chkpt"] = args.resume
+
+        if os.path.exists(args.resume):
+            logger.info(f"Resume training from checkpoint {args.resume}")
+            exp["model"]["pretrained_chkpt"] = args.resume
 
     try:
         trainer(exp, chkpt_dir, trainloader, testloader, writer, logger, hp_str)
