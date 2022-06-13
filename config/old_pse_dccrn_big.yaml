@@ -20,10 +20,10 @@ experiment:
     name: "pse_dccrn"
     pretrained_chkpt: # Leave empty if do train from scratch
     input_dim:  # 8*audio.num_freq + embedder.emb_dim, will get computed in get_model.py
-    lstm_dim: 400
-    fc1_dim: 600
-    fc2_dim: 601 # num_freq
-    bidirection: True
+    rnn_units: 256
+    masking_mode: 'E'
+    use_clstm: True
+    kernel_num: [32, 64, 128, 256, 256,256]
 
   loss_function: "power_law_compressed"
 

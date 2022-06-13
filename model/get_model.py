@@ -51,13 +51,17 @@ def get_vfmodel(exp_config, train, device):
                     fft_len=exp_config.audio.n_fft,
                     win_len=exp_config.audio.win_length,
                     win_inc=exp_config.audio.hop_length,
-                    rnn_units=256,masking_mode='E',use_clstm=True,kernel_num=[32, 64, 128, 256, 256,256])
+                    rnn_units=exp_config.model.rnn_units,
+                    masking_mode=exp_config.model.masking_mode,
+                    use_clstm=exp_config.model.use_clstm,
+                    kernel_num=exp_config.model.kernel_num)
     elif exp_config.model.name == "pse_dccrn_stft":
         model = PSE_DCCRN_STFT(exp_config, 
                     fft_len=exp_config.audio.n_fft,
-                    win_len=exp_config.audio.win_length,
-                    win_inc=exp_config.audio.hop_length,
-                    rnn_units=256,masking_mode='E',use_clstm=True,kernel_num=[32, 64, 128, 256, 256,256])
+                    rnn_units=exp_config.model.rnn_units,
+                    masking_mode=exp_config.model.masking_mode,
+                    use_clstm=exp_config.model.use_clstm,
+                    kernel_num=exp_config.model.kernel_num)
     else:
         raise NotImplementedError(f"Please implement {model} model")
 
@@ -96,3 +100,20 @@ def get_forward(exp_config):
         return train_forward, inference_forward
     else:
         raise NotImplementedError(f"Please implement forward function for {embedder} embedder and {model} model")
+
+def get_embedder_forward(exp_config):
+    model = exp_config.model.name
+    embedder = exp_config.embedder.name
+
+    if embedder == "ge2e" and model == "pse_dccrn":
+        from model.forward_recipes.ge2e_psedccrn import __get_dvec
+    if embedder == "ge2e" and model == "pse_dccrn_stft":
+        from model.forward_recipes.ge2e_psedccrn_stft import __get_dvec
+    elif embedder == "ge2e" and model == "voicefilter":
+        from model.forward_recipes.ge2e_vf import __get_dvec
+    elif embedder == "ZaloTop1" and model == "voicefilter":
+        from model.forward_recipes.zaloai_vf import __get_dvec
+    else:
+        raise NotImplementedError(f"Please implement forward function for {embedder} embedder and {model} model")
+
+    return __get_dvec

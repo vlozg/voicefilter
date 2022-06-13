@@ -14,10 +14,7 @@ class PSE_DCCRN(nn.Module):
                     hp,
                     rnn_layers=2,
                     rnn_units=128,
-                    win_len=400,
-                    win_inc=100, 
                     fft_len=512,
-                    win_type='hanning',
                     masking_mode='E',
                     use_clstm=False,
                     use_cbn = False,
@@ -34,21 +31,9 @@ class PSE_DCCRN(nn.Module):
         super(PSE_DCCRN, self).__init__()
         self.hp = hp
 
-        # win_len = hp.audio.win_length
-        # fft_len = hp.audio.n_fft
-
-        # for fft 
-        self.win_len = win_len
-        self.win_inc = win_inc
         self.fft_len = fft_len
-        self.win_type = win_type 
-
-        input_dim = win_len
-        output_dim = win_len
         
         self.rnn_units = rnn_units
-        self.input_dim = input_dim
-        self.output_dim = output_dim
         self.hidden_layers = rnn_layers
         self.kernel_size = kernel_size
         #self.kernel_num = [2, 8, 16, 32, 128, 128, 128]
