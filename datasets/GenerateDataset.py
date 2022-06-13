@@ -145,9 +145,19 @@ def generate_dataset_df(exp_config, dataset_config, speakers):
     i=0
     pbar = tqdm.tqdm(total = dataset_config.size)
 
+    dataset_detail = dataset_config.detail
+    dataset_weight = dataset_config.get("weight")
+
     while i<dataset_config.size:
-        # Random 2 speaker
-        spk1, spk2 = random.sample(speakers, 2)
+        # Random datasets to get speaker
+        dataset_choice = np.random.choice(dataset_detail, 2, replace=True, p=dataset_weight)
+
+        # Random 2 speakers from selected datasets
+        if dataset_choice[0] == dataset_choice[1]:
+            spk1, spk2 = random.sample(speakers[dataset_choice[0]], 2)
+        else:
+            spk1 = random.choice(speakers[dataset_choice[0]])
+            spk2 = random.choice(speakers[dataset_choice[1]])
         s1_dvec, s1_target = random.sample(spk1, 2)
         s2 = random.choice(spk2)
 
