@@ -115,6 +115,7 @@ if __name__ == '__main__':
         dvec_lens = []
         w1_silent_ratio_10db = []
         w2_silent_ratio_10db = []
+        d_silent_ratio_10db = []
 
         for batch in tqdm(testset):
             w1_lens.append(batch["target_len"])
@@ -130,6 +131,11 @@ if __name__ == '__main__':
                 w2_silent_ratio_10db.append(audio.silent_len(batch["interf_wav"]) / len(batch["interf_wav"]))
             except:
                 w2_silent_ratio_10db.append(None)
+                logger.info(batch)
+            try:
+                d_silent_ratio_10db.append(audio.silent_len(batch["dvec_wav"]) / len(batch["dvec_wav"]))
+            except:
+                d_silent_ratio_10db.append(None)
                 logger.info(batch)
 
             target_stft = batch["target_stft"]
