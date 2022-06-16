@@ -36,7 +36,7 @@ def validate(model, embedder, testloader, train_forward, criterion, device, audi
         est_stft = est_stft[0].cpu().detach().numpy()
         est_mask = est_mask[0].cpu().detach().numpy().T
         
-        est_wav = audio._istft(est_stft)
+        est_wav = audio._istft(est_stft.T)
         est_mag, _ = audio.stft2spec(est_stft)
         mixed_mag, _ = audio.stft2spec(batch["mixed_stft"][0].numpy())
         target_mag, _ = audio.stft2spec(batch["target_stft"][0].numpy())
