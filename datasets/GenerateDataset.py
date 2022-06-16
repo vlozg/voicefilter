@@ -150,7 +150,11 @@ def generate_dataset_df(exp_config, dataset_config, speakers):
 
     while i<dataset_config.size:
         # Random datasets to get speaker
-        dataset_choice = np.random.choice(dataset_detail, 2, replace=True, p=dataset_weight)
+        if dataset_config.get("type") == "mixed" or dataset_config.get("type") is None:
+            dataset_choice = np.random.choice(dataset_detail, 2, replace=True, p=dataset_weight)
+        elif dataset_config.type == "cross":
+            dataset_choice = np.random.choice(dataset_detail, 1, replace=True, p=dataset_weight)
+            dataset_choice = np.repeat(dataset_choice, 2)
 
         # Random 2 speakers from selected datasets
         if dataset_choice[0] == dataset_choice[1]:
