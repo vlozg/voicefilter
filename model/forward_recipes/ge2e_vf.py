@@ -35,7 +35,8 @@ def __forward(model, embedder, batch, device):
     dvec = __get_dvec(embedder, batch, device)
 
     est_mask = model(torch.pow(mixed_stft.abs(), 0.3), dvec)
-    est_stft = mixed_stft*torch.pow(est_mask, 10/3)
+    with torch.no_grad():
+        est_stft = mixed_stft*torch.pow(est_mask, 10/3)
 
     return est_stft, est_mask
 
@@ -44,12 +45,14 @@ def __forward(model, embedder, batch, device):
 def train_forward(model, embedder, batch, criterion, device):
     # Get target for loss calculation
     target_stft = batch["target_stft"]
-    if device == "cuda":
+    mixed_stft = batch["mixed_stft"]
+    if device == "cuda": 
+        mixed_stft = mixed_stft.cuda(non_blocking=True)
         target_stft = target_stft.cuda(non_blocking=True)
 
     est_stft, est_mask = __forward(model, embedder, batch, device)
 
-    loss = criterion(1, est_stft, target_stft)
+    loss = criterion(est_mask, mixed_stft, target_stft)
     
     return est_stft, est_mask, loss
 
