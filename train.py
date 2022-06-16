@@ -8,7 +8,6 @@ import traceback
 from trainer.trainer import trainer
 from utils.hparams import HParam
 from utils.writer import MyWriter
-from datasets.dataloader import create_dataloader
 
 
 if __name__ == '__main__':
@@ -55,11 +54,6 @@ if __name__ == '__main__':
 
     writer = MyWriter(exp.audio, log_dir)
 
-    logger.info("Start making validate set")
-    testloader = create_dataloader(config, scheme="eval")
-    logger.info("Start making train set")
-    trainloader = create_dataloader(config, scheme="train")
-
     if args.resume:
         if args.resume == "backup":
             args.resume = os.path.join(chkpt_dir, 'backup.pt')
@@ -69,7 +63,7 @@ if __name__ == '__main__':
             exp["model"]["pretrained_chkpt"] = args.resume
 
     try:
-        trainer(exp, chkpt_dir, trainloader, testloader, writer, logger, hp_str)
+        trainer(config, chkpt_dir, writer, logger, hp_str)
     except Exception as e:
         logger.info("Exiting due to exception: %s" % e)
         traceback.print_exc()

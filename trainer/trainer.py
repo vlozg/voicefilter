@@ -1,4 +1,3 @@
-from cmath import log
 import os
 import math
 import torch
@@ -8,9 +7,22 @@ from utils.audio import Audio
 
 from model.get_model import get_vfmodel, get_embedder, get_forward
 from loss.get_criterion import get_criterion
-from .validate import validate
+from trainer.optimizer.get_optimizer import get_optimizer
+from trainer.validate import validate
 
-def trainer(config, pt_dir, trainloader, testloader, writer, logger, hp_str):
+from datasets.dataloader import create_dataloader
+
+
+def trainer(config, pt_dir, writer, logger, hp_str):
+
+    # Create and load dataset
+    logger.info("Start making validate set")
+    testloader = create_dataloader(config, scheme="eval")
+    logger.info("Start making train set")
+    trainloader = create_dataloader(config, scheme="train")
+
+    # Start using exp config from this onward (for simplication)
+    config = config.experiment
 
     # Train variables init
     step = 0
@@ -27,15 +39,7 @@ def trainer(config, pt_dir, trainloader, testloader, writer, logger, hp_str):
     train_forward, _ = get_forward(config)
     criterion = get_criterion(config)
 
-    if config.train.optimizer == 'adabound':
-        optimizer = AdaBound(model.parameters(),
-                             lr=config.train.adabound.initial,
-                             final_lr=config.train.adabound.final)
-    elif config.train.optimizer == 'adam':
-        optimizer = torch.optim.Adam(model.parameters(),
-                                     lr=config.train.optimizer_param.lr)
-    else:
-        raise Exception("%s optimizer not supported" % config.train.optimizer)
+    optimizer, scheduler = get_optimizer(config, model)
 
 
     # Check resume from checkpoint
@@ -63,6 +67,7 @@ def trainer(config, pt_dir, trainloader, testloader, writer, logger, hp_str):
 
         _, _, loss = train_forward(model, embedder, batch, criterion, device)
 
+        loss /= config.train.grad_accumulate
         loss.backward()
         accum_loss += loss.item()
         accum += 1
@@ -83,10 +88,12 @@ def trainer(config, pt_dir, trainloader, testloader, writer, logger, hp_str):
         if accum % config.train.grad_accumulate != 0: continue
 
         optimizer.step()
+        if scheduler is not None:
+            scheduler.step()
+            
         optimizer.zero_grad()
         accum = 0
         step += 1
-        accum_loss /= config.train.grad_accumulate
 
         # write loss to tensorboard
         if step % config.train.summary_interval == 0:
