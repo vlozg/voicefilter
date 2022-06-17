@@ -22,15 +22,17 @@ def get_optimizer(config, model):
         raise NotImplementedError("%s optimizer not supported" % config.train.optimizer)
 
     # Set scheduler
-    if config.train.scheduler == '1cycle':
+    if config.train.get("scheduler") is None:
+        scheduler = None
+    elif config.train.scheduler == '1cycle':
         scheduler = lr_scheduler.OneCycleLR(optimizer,
                                      max_lr=config.train.scheduler_param.max_lr,
                                      total_steps=config.train.max_step,
                                      pct_start=config.train.scheduler_param.pct_start,
                                      div_factor=config.train.scheduler_param.max_lr/config.train.scheduler_param.min_lr,
+                                     final_div_factor=config.train.scheduler_param.min_lr/config.train.scheduler_param.final_lr,
+                                     three_phase=config.train.scheduler_param.three_phase,
                                      anneal_strategy=config.train.scheduler_param.anneal_strategy,)
-    elif config.train.scheduler is None:
-        scheduler = None
     else:
         raise NotImplementedError("%s scheduler not supported" % config.train.optimizer)
 
