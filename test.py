@@ -42,6 +42,7 @@ if __name__ == '__main__':
         config.experiment.use_cuda = args.use_cuda
     config.experiment.dataset = data_config.experiment.dataset
     config.experiment.model.pretrained_chkpt = args.chkpt
+    config.experiment.model.batch_size = 1
 
     exp = config["experiment"]
     env = config["env"]
