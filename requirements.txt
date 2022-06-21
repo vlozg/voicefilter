@@ -27,3 +27,8 @@ yacs==0.1.4
 jupyter-dash==0.4.2
 
 torchmetrics
+torchmetrics[audio]
+pesq
+
+# For DNSMOS
+onnxruntime-gpu
