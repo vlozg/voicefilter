@@ -36,7 +36,18 @@ def tester(config, testloader, logger):
             est_stft = est_stft.cpu().detach().numpy()
             for est_stft_, mixed_wav, target_wav in zip(est_stft, batch["mixed_wav"], batch["target_wav"]):
                 est_wav = audio._istft(est_stft_.T, length=len(target_wav))
-                est_wav = torch.from_numpy(est_wav).to(device=device).reshape(1, -1)
+
+                # Calculate DNSMOS score, STOI, ESTOI,... in future manner
+                dnsmos_scores.append(dnsmos(est_wav))
+
+                est_wav = torch.from_numpy(est_wav)
+                future_stois[executor.submit(stoi, est_wav, target_wav, 16000, False)] = idx
+                future_estois[executor.submit(stoi, est_wav, target_wav, 16000, True)] = idx
+                future_pesqs[executor.submit(pesq, est_wav, target_wav, 16000, "wb")] = idx
+                future_si_snrs[executor.submit(si_snr, est_wav, target_wav)] = idx
+
+
+                est_wav = est_wav.to(device=device).reshape(1, -1)
                 
                 target_wav = target_wav.to(device=device).reshape(1, -1)
                 mixed_wav = mixed_wav.to(device=device).reshape(1, -1)
@@ -46,14 +57,41 @@ def tester(config, testloader, logger):
                     sdr = sdr.item()
                 else: 
                     sdr = None
+
                 sdrs_after.append(sdr)
 
         test_losses = np.array(test_losses)
         sdrs_after = np.array(sdrs_after)
+
+        ###
+        # Get result from all task
+        ###
+
+        # List of dict to Dict of list
+        dnsmos_scores = {k: np.array([dic[k] for dic in dnsmos_scores]) for k in dnsmos_scores[0].keys()}
+
+        logger.info("Start gathering STOI")
+        stois = torch.stack(gather_future(future_stois)).numpy()
+
+        logger.info("Start gathering ESTOI")
+        estois = torch.stack(gather_future(future_estois)).numpy()
+
+        logger.info("Start gathering PESQ")
+        pesqs = torch.stack(gather_future(future_pesqs)).numpy()
+
+        logger.info("Start gathering SI-SNR")
+        si_snrs = torch.stack(gather_future(future_si_snrs)).numpy()
                                 
         logger.info(f"Complete testing")
 
-    return {
+    results = {
         "loss": test_losses, 
         "sdr": sdrs_after,
+        "stoi": stois,
+        "estoi": estois,
+        "pesq": pesqs,
+        "si-snr": si_snrs,
+        **dnsmos_scores
     }
+
+    return results
