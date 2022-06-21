@@ -39,15 +39,18 @@ def trainer(config, pt_dir, writer, logger, hp_str):
     train_forward, _ = get_forward(config)
     criterion = get_criterion(config)
 
-    optimizer, scheduler = get_optimizer(config, model)
-
+    if config.train.get("resume_from_chkpt") is True:
+        logger.info("Resuming optimizer and scheduler from checkpoint: %s" % config.model.pretrained_chkpt)
+        optimizer, scheduler = get_optimizer(config, model, chkpt)
+        if chkpt is not None:
+            step = chkpt['step']
+    else:
+        logger.info("New optimizer")
+        optimizer, scheduler = get_optimizer(config, model, None)
 
     # Check resume from checkpoint
     if chkpt is not None:
         logger.info("Resuming from checkpoint: %s" % config.model.pretrained_chkpt)
-        optimizer.load_state_dict(chkpt['optimizer'])
-        step = chkpt['step']
-
         # will use new given hparams.
         if hp_str != chkpt['hp_str']:
             logger.warning("New hparams is different from checkpoint.")

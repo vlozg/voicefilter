@@ -5,7 +5,6 @@ import logging
 import argparse
 import traceback
 
-from trainer.trainer import trainer
 from utils.hparams import HParam
 from utils.writer import MyWriter
 
@@ -17,7 +16,9 @@ if __name__ == '__main__':
     parser.add_argument('--clean_rerun', type=bool, default=False,
                         help="remove old checkpoint and log. Default: false")
     parser.add_argument('-r', '--resume', type=str, default="backup",
-                        help="resume from checkpoint. Default: false")
+                        help="resume from checkpoint. Default: backup")
+    parser.add_argument('-t', '--trainer_type', type=str, default="regular",
+                        help="type of trainer. Must be one of these ['regular', 'multi_reader']. Default: regular")
     args = parser.parse_args()
 
     config = HParam(args.config)
@@ -57,10 +58,19 @@ if __name__ == '__main__':
     if args.resume:
         if args.resume == "backup":
             args.resume = os.path.join(chkpt_dir, 'backup.pt')
+            config.experiment.train["resume_from_chkpt"] = True
 
         if os.path.exists(args.resume):
             logger.info(f"Resume training from checkpoint {args.resume}")
             exp["model"]["pretrained_chkpt"] = args.resume
+            config.experiment.train["resume_from_chkpt"] = True
+
+
+    if args.trainer_type == "regular":
+        from trainer.trainer import trainer
+    else:
+        raise NotImplementedError(f"{args.trainer_type} trainer not implemented")
+
 
     try:
         trainer(config, chkpt_dir, writer, logger, hp_str)

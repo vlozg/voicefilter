@@ -4,8 +4,7 @@ from torch.optim import Adam, AdamW, lr_scheduler
 from utils.adabound import AdaBound
 
 
-def get_optimizer(config, model):
-
+def get_optimizer(config, model,chkpt=None):
     # Set optimizer
     if config.train.optimizer == 'adabound':
         optimizer = AdaBound(model.parameters(),
@@ -21,6 +20,12 @@ def get_optimizer(config, model):
     else:
         raise NotImplementedError("%s optimizer not supported" % config.train.optimizer)
 
+    if chkpt is not None:
+        optimizer.load_state_dict(chkpt['optimizer'])
+        step = chkpt['step']
+    else:
+        step = -1
+
     # Set scheduler
     param = config.train.scheduler_param
     if config.train.get("scheduler") is None:
@@ -33,7 +38,8 @@ def get_optimizer(config, model):
                                      div_factor=param.max_lr/param.min_lr,
                                      final_div_factor=param.min_lr/param.get("final_lr", param.min_lr/20),
                                      three_phase=param.get("three_phase", False),
-                                     anneal_strategy=param.get("anneal_strategy", "cos"))
+                                     anneal_strategy=param.get("anneal_strategy", "cos"),
+                                     last_epoch=step)
     else:
         raise NotImplementedError("%s scheduler not supported" % config.train.optimizer)
 
