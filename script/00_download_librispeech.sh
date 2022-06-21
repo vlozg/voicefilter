@@ -7,6 +7,9 @@ cd ../datasets
 (axel -n 10 -q -c "https://www.openslr.org/resources/12/train-clean-360.tar.gz" \
     && { tar -xzf train-clean-360.tar.gz && rm train-clean-360.tar.gz; } \
     || echo "Download train-clean-360 failed") &
+(axel -n 10 -q -c "https://www.openslr.org/resources/12/train-other-500.tar.gz" \
+    && { tar -xzf train-other-500.tar.gz && rm train-other-500.tar.gz; } \
+    || echo "Download train-other-500 failed") &
 (axel -n 10 -q -c "https://www.openslr.org/resources/12/dev-clean.tar.gz" \
     && { tar -xzf dev-clean.tar.gz && rm dev-clean.tar.gz; } \
     || echo "Download dev-clean failed") &
