@@ -14,6 +14,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-c', '--config', type=str, default='config/best.yaml',
                         help="folder contain yaml files for configuration")
+    parser.add_argument('-n', '--num_iter', type=int, default=100,
+                        help="number of iter to find learning rate")
+    parser.add_argument('--max_lr', type=float, default=10.,
+                        help="maximum learning rate")
+    parser.add_argument('--min_lr', type=float, default=1e-8,
+                        help="minimum learning rate")
     args = parser.parse_args()
 
     config = HParam(args.config)
@@ -44,7 +50,7 @@ if __name__ == '__main__':
     logger = logging.getLogger()
 
     try:
-        lr_finder(config, chkpt_dir, None, logger, hp_str)
+        lr_finder(config, chkpt_dir, None, logger, hp_str, init_lr=args.min_lr, end_lr=args.max_lr, num_iter=args.num_iter)
     except Exception as e:
         logger.info("Exiting due to exception: %s" % e)
         traceback.print_exc()

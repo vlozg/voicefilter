@@ -79,6 +79,8 @@ def lr_finder(
     it = iter(trainloader) # use iterator instead of for loop
     device = "cuda" if config.use_cuda else "cpu"
 
+    # Remove scheduler from this trainer
+    config.train.scheduler = None
 
     # Init model, embedder, optim, criterion
     audio = Audio(config)
@@ -86,13 +88,18 @@ def lr_finder(
     model, chkpt = get_vfmodel(config, train=True, device=device)
     train_forward, _ = get_forward(config)
     criterion = get_criterion(config)
-    optimizer, _ = get_optimizer(config, model)
 
+
+    if config.train.get("resume_from_chkpt") is True:
+        logger.info("Resuming optimizer and scheduler from checkpoint: %s" % config.model.pretrained_chkpt)
+        optimizer, _ = get_optimizer(config, model, chkpt)
+    else:
+        logger.info("New optimizer")
+        optimizer, _ = get_optimizer(config, model, None)
 
     # Check resume from checkpoint
     if chkpt is not None:
         logger.info("Resuming from checkpoint: %s" % config.model.pretrained_chkpt)
-
         # will use new given hparams.
         if hp_str != chkpt['hp_str']:
             logger.warning("New hparams is different from checkpoint.")
@@ -113,7 +120,7 @@ def lr_finder(
         param_group["lr"] = new_lr
     
 
-    history = {"lr": [], "loss": []}
+    history = {"lr": [], "loss": [], "raw_loss": []}
     best_loss = 0.
 
     if step_mode.lower() == "exp":
@@ -162,6 +169,7 @@ def lr_finder(
 
         # Update the learning rate
         history["lr"].append(lr_schedule.get_last_lr()[0])
+        history["raw_loss"].append(loss)
         lr_schedule.step()
 
         # Track the best loss and smooth it if smooth_f is specified
