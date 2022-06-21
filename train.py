@@ -57,8 +57,9 @@ if __name__ == '__main__':
 
     if args.resume:
         if args.resume == "backup":
-            args.resume = os.path.join(chkpt_dir, 'backup.pt')
-            config.experiment.train["resume_from_chkpt"] = True
+            if os.path.isfile(os.path.join(chkpt_dir, 'backup.pt')):
+                args.resume = os.path.join(chkpt_dir, 'backup.pt')
+                config.experiment.train["resume_from_chkpt"] = True
 
         if os.path.exists(args.resume):
             logger.info(f"Resume training from checkpoint {args.resume}")
