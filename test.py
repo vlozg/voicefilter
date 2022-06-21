@@ -25,8 +25,10 @@ if __name__ == '__main__':
                         help="use cuda for testing, overwrite test config. Default: follow test config file")
     parser.add_argument('--postfix', type=str, default=None,
                         help="add postfix to test result name. Default: not add postfix")
-    parser.add_argument('--skip_exist', type=bool, default=False,
+    parser.add_argument('--skip_exist', type=str, default="False",
                         help="skip testing if result exist. Default: False")
+    parser.add_argument('--output_audio', type=str, default=None,
+                        help="Output infered audio. Default: do not output infered audio")                        
     args = parser.parse_args()
 
 
@@ -81,6 +83,21 @@ if __name__ == '__main__':
     else:
         test_record = dict()
 
+
+    if test_record.get(exp.name):
+        # Test result on same model exist
+        logger.info("Test result exist")
+        i = 0
+        while test_record.get(f"{exp.name}_{i}"): i+=1
+        exp.name = f"{exp.name}_{i}"
+        logger.info(f"Result will be stored within {exp.name}")
+        
+    if args.output_audio == "auto":
+        output_dir = os.path.join(f"test_results/{test_exp_name}/{exp.name}")
+    else:
+        output_dir = args.output_audio
+
+
     if test_record.get("data") or test_record.get("data_config"):
         if test_record["data"] != config.experiment.dataset.test.file_path:
             logger.info("Different dataset file path!")
@@ -90,8 +107,10 @@ if __name__ == '__main__':
     else:
         test_record["data"] = config.experiment.dataset.test.file_path
         test_record["config"] = data_config
+        test_record["output_dir"] = output_dir
 
-    if args.skip_exist and test_record.get(exp.name):
+
+    if args.skip_exist.upper() in ("Y", "YES", "T", "TRUE") and test_record.get(exp.name):
         # Test result on same model exist
         logger.info(f"Test result for experiment name {exp.name} exits. Abort this test.")
         exit()
@@ -100,7 +119,7 @@ if __name__ == '__main__':
     # Conduct testing
     ###
     try:
-        test_result = tester(exp, testloader, logger)
+        test_result = tester(exp, testloader, logger, output_dir)
     except Exception as e:
         logger.info("Exiting due to exception: %s" % e)
         traceback.print_exc()
@@ -121,16 +140,8 @@ if __name__ == '__main__':
         "metrics": test_result
     }
 
-    if test_record.get(exp.name):
-        # Test result on same model exist
-        if test_record[exp.name] != test_result:
-            logger.info("Test result exist, but different result this time!")
-            i = 0
-            while test_record.get(f"{exp.name}_{i}"): i+=1
-            logger.info(f"Result will be stored within {exp.name}_{i}")
-            test_record[f"{exp.name}_{i}"] = test_result
-    else:
-        test_record[exp.name] = test_result
+        
+    test_record[exp.name] = test_result
 
     json_object = json.dumps(test_record, indent = 4)
     with open(test_record_path, "w") as f:

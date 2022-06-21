@@ -1,6 +1,9 @@
+import os
 import torch
 import torch.nn as nn
 import numpy as np
+import concurrent.futures
+import soundfile
 
 from utils.audio import Audio
 
@@ -8,10 +11,28 @@ from model.get_model import get_vfmodel, get_embedder, get_forward
 from loss.get_criterion import get_criterion
 
 from torch_mir_eval import bss_eval_sources
+from utils.dnsmos import DNSMOS
+from torchmetrics.functional.audio.stoi import short_time_objective_intelligibility as stoi
+from torchmetrics.functional.audio.pesq import perceptual_evaluation_speech_quality as pesq
+from torchmetrics.functional import scale_invariant_signal_noise_ratio as si_snr
 
 from tqdm import tqdm
 
-def tester(config, testloader, logger):
+
+def gather_future(futures):
+    output_list = [None]*len(futures)
+    for future in tqdm(concurrent.futures.as_completed(futures), total=len(futures)):
+        idx = futures[future]
+        try:
+            data = future.result()
+        except Exception as exc:
+            print('%r generated an exception: %s' % (idx, exc))
+        else:
+            output_list[idx] = data
+    return output_list
+
+
+def tester(config, testloader, logger, out_dir=None):
 
     # Init model, embedder, optim, criterion
     audio = Audio(config)
@@ -20,6 +41,7 @@ def tester(config, testloader, logger):
     model, chkpt = get_vfmodel(config, train=False, device=device)
     train_forward, _ = get_forward(config)
     criterion = get_criterion(config, reduction="none")
+    dnsmos = DNSMOS("utils", True)
 
     if chkpt is None:
         logger.error("There is no pre-trained checkpoint to test, please re-check config file")
@@ -27,15 +49,31 @@ def tester(config, testloader, logger):
     else:
         logger.info(f"Start testing checkpoint: {config.model.pretrained_chkpt}")
     
-    with torch.no_grad():
-        test_losses = []
-        sdrs_after = []
-        for batch in tqdm(testloader):
-            est_stft, est_mask, loss = train_forward(model, embedder, batch, criterion, device)
+    test_losses = []
+    sdrs_after = []
+    dnsmos_scores = []
+    stois = []
+    estois = []
+    pesqs = []
+    si_snrs = []
+
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        future_stois = {}
+        future_estois = {}
+        future_pesqs = {}
+        future_si_snrs = {}
+
+        for idx, batch in enumerate(tqdm(testloader)):
+            with torch.no_grad():
+                est_stft, est_mask, loss = train_forward(model, embedder, batch, criterion, device)
             test_losses += loss.mean((1,2)).cpu().tolist()
             est_stft = est_stft.cpu().detach().numpy()
             for est_stft_, mixed_wav, target_wav in zip(est_stft, batch["mixed_wav"], batch["target_wav"]):
                 est_wav = audio._istft(est_stft_.T, length=len(target_wav))
+                if out_dir is not None:
+                    out_file = os.path.join(out_dir, f"{idx}.wav")
+                    os.makedirs(out_dir if out_dir != '' else ".", exist_ok=True)
+                    soundfile.write(out_file, est_wav, config.audio.sample_rate)
 
                 # Calculate DNSMOS score, STOI, ESTOI,... in future manner
                 dnsmos_scores.append(dnsmos(est_wav))
@@ -51,7 +89,7 @@ def tester(config, testloader, logger):
                 
                 target_wav = target_wav.to(device=device).reshape(1, -1)
                 mixed_wav = mixed_wav.to(device=device).reshape(1, -1)
-                
+
                 if target_wav.sum() != 0 and mixed_wav.sum() != 0 and est_wav.sum() != 0:
                     sdr,sir,sar,perm = bss_eval_sources(target_wav,est_wav,compute_permutation=False)
                     sdr = sdr.item()
