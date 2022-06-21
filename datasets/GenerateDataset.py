@@ -5,8 +5,8 @@ import librosa
 import numpy as np
 import pandas as pd
 import tqdm as tqdm
-from torch.utils.data import Dataset
-from utils.audio import Audio
+
+from .GeneralDataset import VFDataset
 
 
 def vad_merge(w, top_db=20, ref=None):
@@ -19,15 +19,7 @@ def vad_merge(w, top_db=20, ref=None):
         temp.append(w[s:e])
     return np.concatenate(temp, axis=None)
 
-class VFGenerateDataset(Dataset):
-    def __init__(self, config, dataset_path, features="all"):
-        self.sr = config.audio.sample_rate
-        self.audio = Audio(config)
-        self.data = pd.read_csv(dataset_path)
-        if type(features) is list:
-            self.features = features
-        elif features == "all":
-            self.features = ["stft", "dvec_mel", "spec"]
+class VFGenerateDataset(VFDataset):
 
     def __getaudio__(self, idx, audio):
         meta = self.data.iloc[idx].to_dict()
