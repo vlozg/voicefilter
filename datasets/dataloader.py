@@ -79,41 +79,48 @@ def create_dataloader(config, scheme):
             dvec_wavs.append(sample["dvec_wav"])
             if sample.get("dvec_tensor") is not None:
                 dvec_tensors.append(sample["dvec_tensor"])            
-            target_wavs.append(sample["target_wav"])
+            
             mixed_wavs.append(sample["mixed_wav"])
-            target_stfts.append(sample["target_stft"])
             mixed_stfts.append(sample["mixed_stft"])
             mixed_mags.append(sample["mixed_mag"])
             mixed_phases.append(sample["mixed_phase"])
-            target_mags.append(sample["target_mag"])
-            target_phases.append(sample["target_phase"])
 
-        target_stfts = pad_sequence(target_stfts, batch_first=True)
-        target_wavs = pad_sequence(target_wavs, batch_first=True)
+            if sample.get("target_wav") is not None:
+                target_wavs.append(sample["target_wav"])
+                target_stfts.append(sample["target_stft"])
+                target_mags.append(sample["target_mag"])
+                target_phases.append(sample["target_phase"])
+
         mixed_wavs = pad_sequence(mixed_wavs, batch_first=True)
         mixed_stfts = pad_sequence(mixed_stfts, batch_first=True)
         mixed_mags = pad_sequence(mixed_mags, batch_first=True)
         mixed_phases = pad_sequence(mixed_phases, batch_first=True)
-        target_mags = pad_sequence(target_mags, batch_first=True)
-        target_phases = pad_sequence(target_phases, batch_first=True)
 
         features = {
             "dvec": dvecs, 
             "dvec_wav": dvec_wavs,
-            "target_wav": target_wavs,
             "mixed_wav": mixed_wavs,
-            "target_stft": target_stfts,
             "mixed_stft": mixed_stfts,
             "mixed_mag": mixed_mags, 
             "mixed_phase": mixed_phases,
-            "target_mag": target_mags, 
-            "tagret_phase": target_phases
         }
 
         if len(dvec_tensors) > 0:
             dvec_tensors = torch.stack(dvec_tensors, dim=0)
             features.update({"dvec_tensor": dvec_tensors})
         
+        if len(target_wavs) > 0:
+            target_stfts = pad_sequence(target_stfts, batch_first=True)
+            target_wavs = pad_sequence(target_wavs, batch_first=True)
+            target_mags = pad_sequence(target_mags, batch_first=True)
+            target_phases = pad_sequence(target_phases, batch_first=True)
+            features.update({
+                "target_wav": target_wavs,
+                "target_stft": target_stfts,
+                "target_mag": target_mags, 
+                "tagret_phase": target_phases
+            })
+
         return features
 
     # Genearate dataset
