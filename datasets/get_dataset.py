@@ -1,12 +1,14 @@
 import os
 import glob
 
-from .GenerateDataset import VFDataset, generate_dataset_df
+from .GenerateDataset import VFGenerateDataset, generate_dataset_df
 from .GGSpeakerIDDataset import VFGGDataset
+from .GeneralDataset import VFDataset
 
 def get_dataset(config, scheme, features="all"):
     dataset_config = config.experiment.dataset[scheme]
-
+    dataset_path = os.path.join(config.env.base_dir, dataset_config.file_path)
+    
     # Genearate dataset
     if config.experiment.dataset.name == "generate":
         
@@ -60,15 +62,14 @@ def get_dataset(config, scheme, features="all"):
             speaker_sets[k] = [x for x in speaker_sets[k] if len(x) >= 2]
         
         # Randomly generate dataset recipe if not exist
-        dataset_path = os.path.join(config.env.base_dir, dataset_config.file_path)
         if not os.path.exists(dataset_path):
             dataset_df = generate_dataset_df(config.experiment, dataset_config, speakers=speaker_sets)
             dataset_df.to_csv(dataset_path,index=False)
 
-        return VFDataset(config.experiment, dataset_path=dataset_path, features=features)
+        return VFGenerateDataset(config.experiment, dataset_path=dataset_path, features=features)
 
     elif config.experiment.dataset.name == "gg":
-        return VFGGDataset(config.experiment, dataset=dataset_config, base_dir=".")
+        return VFGGDataset(config.experiment, dataset_path=dataset_path, features=features)
     
     else:
-        raise NotImplementedError(f"Dataset scheme {scheme} is not implemented")
+        raise VFDataset(config.experiment, dataset_path=dataset_path, features=features)
