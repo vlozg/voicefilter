@@ -97,5 +97,10 @@ class VFDataset(Dataset):
         if features_dict.get("target_wav") is not None:
             features_dict["target_wav"] = torch.from_numpy(features_dict["target_wav"])
         features_dict["mixed_wav"] = torch.from_numpy(features_dict["mixed_wav"])
+
+        try:
+            features_dict.update({ "index": meta })
+        except:
+            features_dict.update({ "index": idx })
         
         return features_dict
