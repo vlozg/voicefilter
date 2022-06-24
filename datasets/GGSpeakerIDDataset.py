@@ -39,6 +39,7 @@ class VFGGDataset(VFDataset):
             "interf_wav": w2,
             "interf_len": len(w2),
             "mixed_wav": mixed,
+            "norm": norm,
         })
 
         return meta, features_dict
