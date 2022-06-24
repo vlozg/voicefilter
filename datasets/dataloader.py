@@ -4,7 +4,7 @@ from torch.nn.utils.rnn import pad_sequence
 
 from .get_dataset import get_dataset
 
-def create_dataloader(config, scheme):
+def create_dataloader(config, scheme, features="all"):
 
     def train_collate_fn(batch):
         dvecs = list()
@@ -61,7 +61,7 @@ def create_dataloader(config, scheme):
         
         return features
 
-    def test_collate_fn(batch):
+    def eval_collate_fn(batch):
         dvecs = list()
         dvec_wavs = list()
         dvec_tensors = list()
@@ -85,11 +85,10 @@ def create_dataloader(config, scheme):
             mixed_mags.append(sample["mixed_mag"])
             mixed_phases.append(sample["mixed_phase"])
 
-            if sample.get("target_wav") is not None:
-                target_wavs.append(sample["target_wav"])
-                target_stfts.append(sample["target_stft"])
-                target_mags.append(sample["target_mag"])
-                target_phases.append(sample["target_phase"])
+            target_wavs.append(sample["target_wav"])
+            target_stfts.append(sample["target_stft"])
+            target_mags.append(sample["target_mag"])
+            target_phases.append(sample["target_phase"])
 
         mixed_wavs = pad_sequence(mixed_wavs, batch_first=True)
         mixed_stfts = pad_sequence(mixed_stfts, batch_first=True)
@@ -109,22 +108,54 @@ def create_dataloader(config, scheme):
             dvec_tensors = torch.stack(dvec_tensors, dim=0)
             features.update({"dvec_tensor": dvec_tensors})
         
-        if len(target_wavs) > 0:
-            target_stfts = pad_sequence(target_stfts, batch_first=True)
-            target_wavs = pad_sequence(target_wavs, batch_first=True)
-            target_mags = pad_sequence(target_mags, batch_first=True)
-            target_phases = pad_sequence(target_phases, batch_first=True)
-            features.update({
-                "target_wav": target_wavs,
-                "target_stft": target_stfts,
-                "target_mag": target_mags, 
-                "tagret_phase": target_phases
-            })
+        target_stfts = pad_sequence(target_stfts, batch_first=True)
+        target_wavs = pad_sequence(target_wavs, batch_first=True)
+        target_mags = pad_sequence(target_mags, batch_first=True)
+        target_phases = pad_sequence(target_phases, batch_first=True)
+        features.update({
+            "target_wav": target_wavs,
+            "target_stft": target_stfts,
+            "target_mag": target_mags, 
+            "tagret_phase": target_phases
+        })
 
         return features
 
+    ###
+    #   Test collate function doesn't need to combine these tensor into 1 
+    #   since we must left these audios in their original length (or else it would affect metric result)
+    ###
+    def test_collate_fn(batch):
+        # List of dict to dict of list
+        features = {k: [dic[k] for dic in batch] for k in batch[0].keys()}
+        
+        if features.get("dvec_mel") is not None:
+            features["dvec"] = features.pop("dvec_mel")
+        
+        if features.get("dvec_tensor"):
+            features["dvec_tensor"] = torch.stack(features["dvec_tensor"], dim=0)
+        
+        # Add batch dimension to these features
+        to_be_unsqueezed = ["target_stft", "target_wav", "mixed_wav", "mixed_stft", "mixed_mag", "mixed_phase", "target_mag", "target_phase", "dvec_tensor"]
+        if features.get("dvec") is not None:
+            if features["dvec"][0] is not None:
+                to_be_unsqueezed.append("dvec")
+
+        for k in to_be_unsqueezed:
+            if features.get(k) is not None:
+                try:
+                    features[k] = [f.unsqueeze(0) for f in features[k]]
+                except Exception as exc:
+                    # print("Cannot unsqueeze ", exc)
+                    pass
+
+        return features
+
+
     # Genearate dataset
-    dataset = get_dataset(config, scheme)
+    if features != "all" and scheme != "test":
+        print("Warning: customize returned feature will mostly work in test dataloader. If use this for train/eval loader, please be sure to check if collate function have been coded properly.")
+    dataset = get_dataset(config, scheme, features)
 
 
     if scheme == "train":
@@ -141,15 +172,15 @@ def create_dataloader(config, scheme):
                           batch_size=config.experiment.train.batch_size,
                           shuffle=False,
                           num_workers=config.experiment.train.num_workers,
-                          collate_fn=test_collate_fn,
+                          collate_fn=eval_collate_fn,
                           pin_memory=True if config.experiment.use_cuda else False,
                           drop_last=False,
                           sampler=None)
     elif scheme == "test":
         return DataLoader(dataset=dataset,
-                          batch_size=1,
+                          batch_size=config.experiment.train.num_workers//2,
                           shuffle=False,
-                          num_workers=config.experiment.train.num_workers,
+                          num_workers=config.experiment.train.num_workers//2,
                           collate_fn=test_collate_fn,
                           pin_memory=True if config.experiment.use_cuda else False,
                           drop_last=False,
