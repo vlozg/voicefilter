@@ -69,7 +69,10 @@ class VFGenerateDataset(VFDataset):
             "interf_wav": w2,
             "interf_len": w1_len,
             "mixed_wav": mixed,
+            "norm": norm,
         })
+
+        return meta, features_dict
 
 
 def generate_sample(s1_target, s2, s1_dvec, sr, audio_len, min_dvec_len):
