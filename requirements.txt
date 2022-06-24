@@ -32,3 +32,7 @@ pesq
 
 # For DNSMOS
 onnxruntime-gpu
+
+# For model performance analysis
+torchinfo==1.7.0
+thop
