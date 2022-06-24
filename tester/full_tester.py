@@ -1,22 +1,23 @@
+import concurrent.futures
 import os
+
+import numpy as np
+import soundfile
 import torch
 import torch.nn as nn
-import numpy as np
-import concurrent.futures
-import soundfile
-
-from utils.audio import Audio
-
-from model.get_model import get_vfmodel, get_embedder, get_forward
+from datasets.dataloader import create_dataloader
 from loss.get_criterion import get_criterion
-
+from model.get_model import get_embedder, get_forward, get_vfmodel
 from torch_mir_eval import bss_eval_sources
-from utils.dnsmos import DNSMOS
-from torchmetrics.functional.audio.stoi import short_time_objective_intelligibility as stoi
-from torchmetrics.functional.audio.pesq import perceptual_evaluation_speech_quality as pesq
-from torchmetrics.functional import scale_invariant_signal_noise_ratio as si_snr
-
+from torchmetrics.functional import \
+    scale_invariant_signal_noise_ratio as si_snr
+from torchmetrics.functional.audio.pesq import \
+    perceptual_evaluation_speech_quality as pesq
+from torchmetrics.functional.audio.stoi import \
+    short_time_objective_intelligibility as stoi
 from tqdm import tqdm
+from utils.audio import Audio
+from utils.dnsmos import DNSMOS
 
 
 def gather_future(futures):
@@ -32,7 +33,12 @@ def gather_future(futures):
     return output_list
 
 
-def tester(config, testloader, logger, out_dir=None):
+def tester(config, logger, out_dir=None):
+
+    logger.info("Start making test set")
+    testloader = create_dataloader(config, scheme="test")
+
+    config = config.experiment
 
     # Init model, embedder, optim, criterion
     audio = Audio(config)
@@ -94,7 +100,7 @@ def tester(config, testloader, logger, out_dir=None):
                     sdr,sir,sar,perm = bss_eval_sources(target_wav,est_wav,compute_permutation=False)
                     sdr = sdr.item()
                 else: 
-                    sdr = None
+                    sdr = float('nan')
 
                 sdrs_after.append(sdr)
 
@@ -109,16 +115,16 @@ def tester(config, testloader, logger, out_dir=None):
         dnsmos_scores = {k: np.array([dic[k] for dic in dnsmos_scores]) for k in dnsmos_scores[0].keys()}
 
         logger.info("Start gathering STOI")
-        stois = torch.stack(gather_future(future_stois)).numpy()
+        stois = torch.stack(gather_future(future_stois), torch.tensor(float('nan'))).numpy()
 
         logger.info("Start gathering ESTOI")
-        estois = torch.stack(gather_future(future_estois)).numpy()
+        estois = torch.stack(gather_future(future_estois), torch.tensor(float('nan'))).numpy()
 
         logger.info("Start gathering PESQ")
-        pesqs = torch.stack(gather_future(future_pesqs)).numpy()
+        pesqs = torch.stack(gather_future(future_pesqs), torch.tensor(float('nan'))).numpy()
 
         logger.info("Start gathering SI-SNR")
-        si_snrs = torch.stack(gather_future(future_si_snrs)).numpy()
+        si_snrs = torch.stack(gather_future(future_si_snrs), torch.tensor(float('nan'))).numpy()
                                 
         logger.info(f"Complete testing")
 
