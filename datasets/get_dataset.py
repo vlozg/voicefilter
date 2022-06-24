@@ -72,4 +72,4 @@ def get_dataset(config, scheme, features="all"):
         return VFGGDataset(config.experiment, dataset_path=dataset_path, features=features)
     
     else:
-        raise VFDataset(config.experiment, dataset_path=dataset_path, features=features)
+        return VFDataset(config.experiment, dataset_path=dataset_path, features=features)
