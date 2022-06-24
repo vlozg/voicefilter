@@ -16,7 +16,9 @@ class VFDataset(Dataset):
         if type(features) is list:
             self.features = features
         elif features == "all":
-            self.features = ["stft", "dvec_mel", "spec"]
+            self.features = ["stft", "dvec_mel", "spec", "asr"]
+        else:
+            self.features = None
 
 
     def __len__(self):
@@ -94,6 +96,21 @@ class VFDataset(Dataset):
                 features_dict.update({"target_stft": torch.from_numpy(audio.stft(features_dict["target_wav"]).T)})
             features_dict.update({"mixed_stft": torch.from_numpy(audio.stft(features_dict["mixed_wav"]).T)})
 
+        if "asr" in self.features:
+            asr_label = None
+            if meta.get("clean_utterance_text"):
+                asr_label = meta.get("clean_utterance_text")
+            else:
+                if meta.get("clean_utterance_text_path"):
+                    f_path = meta.get("clean_utterance_text_path")
+                elif meta.get("clean_utterance_path"):
+                    f_path = Path(meta.get("clean_utterance_path")).parent / (Path(meta.get("clean_utterance_path")).stem + ".txt")
+                
+                if f_path.exists():
+                    with open(f_path, "r") as f:
+                        asr_label = f.read().strip()
+            
+            features_dict.update({"target_text": asr_label})
         if features_dict.get("target_wav") is not None:
             features_dict["target_wav"] = torch.from_numpy(features_dict["target_wav"])
         features_dict["mixed_wav"] = torch.from_numpy(features_dict["mixed_wav"])
