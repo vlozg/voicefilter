@@ -1,0 +1,10 @@
+experiment:
+  use_cuda: True
+  
+  dataset:
+    name: "general" 
+    test:
+      file_path: "datasets/recipes/VinASRSNR0.csv"
+      detail: ["librispeech-test"]
+      audio_len: 3.0
+      size: 703

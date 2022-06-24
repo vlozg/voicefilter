@@ -1,0 +1,7 @@
+experiment:
+  use_cuda: True
+  
+  dataset:
+    name: "general" 
+    test:
+      file_path: "datasets/recipes/VinASRClean.csv"

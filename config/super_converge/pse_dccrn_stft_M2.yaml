@@ -1,0 +1,85 @@
+experiment:
+  name: "pse_dccrn_stft_m2"
+  clean_rerun: True # Delete old logs and chkpt if true
+  use_cuda: True
+  
+  dataset:
+    name: "generate"
+    train:
+      file_path: "datasets/recipes/LibriGenerate_train.csv"
+      detail: ["librispeech-train"]
+      audio_len: 3.0
+      size: 500000
+    eval: 
+      file_path: "datasets/recipes/LibriGenerate_eval.csv"
+      detail: ["librispeech-test"]
+      audio_len: 3.0
+      size: 100
+  
+  model:
+    name: "pse_dccrn_stft"
+    pretrained_chkpt: # Leave empty if do train from scratch
+    input_dim:  # 8*audio.num_freq + embedder.emb_dim, will get computed in get_model.py
+    rnn_units: 128
+    masking_mode: 'E'
+    use_clstm: True
+    kernel_num: [16, 32, 64, 128, 128, 128]
+
+  loss_function: "power_law_compressed"
+
+  train:
+    batch_size: 16
+    num_workers: 8
+    grad_accumulate: 1
+    optimizer: "adam"
+    optimizer_param: 
+      lr: 0.003
+    scheduler: "1cycle"
+    scheduler_param:
+      max_lr: 0.05
+      min_lr: 0.0025
+      final_lr: 0.0001
+      pct_start: 0.3
+      anneal_strategy: "cos"
+    max_step: 100000
+    summary_interval: 1
+    checkpoint_interval: 5000
+    backup_interval: 1000
+  
+  embedder: # d-vector embedder. don"t fix it!
+    name: "ge2e"
+    pretrained_chkpt: "embedder.pt"
+    num_mels: 40
+    n_fft: 512
+    emb_dim: 256
+    lstm_hidden: 768
+    lstm_layers: 3
+    window: 80
+    stride: 40
+  
+  audio:
+    n_fft: 1280
+    num_freq: 641 # n_fft//2 + 1
+    sample_rate: 16000
+    hop_length: 160
+    win_length: 400
+    min_level_db: -100.0
+    ref_level_db: 20.0
+    preemphasis: 0.97
+    power: 0.30
+
+---
+env:
+  base_dir: "."
+  data:
+    libri_dir: "datasets/LibriSpeech"
+    vivos_dir: "datasets/VIVOS/vivos"
+    vctk_dir: "datasets/VCTK-Corpus"
+    voxceleb1_dir: "datasets/VoxCeleb1"
+    voxceleb2_dir: "datasets/VoxCeleb2"
+    vin_dir: "datasets/VinBigdata"
+    zalo_dir: "datasets/ZaloAI2020"
+
+  log:
+    chkpt_dir: "chkpt"
+    log_dir: "logs"

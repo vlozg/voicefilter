@@ -1,0 +1,7 @@
+experiment:
+  use_cuda: True
+  
+  dataset:
+    name: "gg" 
+    test:
+      file_path: "datasets/ggspeaker_id/LibriSpeech/dev_tuples.csv"
