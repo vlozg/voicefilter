@@ -1,4 +1,5 @@
 import warnings
+from pathlib import Path
 
 import librosa
 import numpy as np
@@ -37,18 +38,19 @@ class VFDataset(Dataset):
             "mixed_path": mixed
         }
 
-        d, _ = librosa.load(s1_dvec, sr=self.sr)
-        w1, _ = librosa.load(s1_target, sr=self.sr)
-        mixed, _ = librosa.load(mixed, sr=self.sr)
-        assert len(d.shape) == len(w1.shape) == len(mixed.shape) == 1, \
-            'wav files must be mono, not stereo'
+        if self.features is not None:
+            d, _ = librosa.load(s1_dvec, sr=self.sr)
+            w1, _ = librosa.load(s1_target, sr=self.sr)
+            mixed, _ = librosa.load(mixed, sr=self.sr)
+            assert len(d.shape) == len(w1.shape) == len(mixed.shape) == 1, \
+                'wav files must be mono, not stereo'
 
-        features_dict.update({
-            "dvec_wav": d,
-            "target_wav": w1,
-            "target_len": len(w1),
-            "mixed_wav": mixed,
-        })
+            features_dict.update({
+                "dvec_wav": d,
+                "target_wav": w1,
+                "target_len": len(w1),
+                "mixed_wav": mixed,
+            })
 
         return meta, features_dict
 
@@ -62,7 +64,17 @@ class VFDataset(Dataset):
             warnings.warn("Only use this function when you want to get audio with custom audio pre-processing")
             audio = self.audio
 
-        meta, features_dict = self.__getaudio__(idx, audio)        
+        meta, features_dict = self.__getaudio__(idx, audio)    
+
+        features_dict.update({**meta})
+
+        if meta.get("index") is None:
+            features_dict.update({ "index": idx })
+        else:
+            features_dict.update({ "index": meta["index"] })
+
+        if self.features is None:
+            return features_dict
 
         if "dvec_mel" in self.features:
             if meta.get("dvec_tensor_path"):
@@ -111,13 +123,10 @@ class VFDataset(Dataset):
                         asr_label = f.read().strip()
             
             features_dict.update({"target_text": asr_label})
-        if features_dict.get("target_wav") is not None:
-            features_dict["target_wav"] = torch.from_numpy(features_dict["target_wav"])
-        features_dict["mixed_wav"] = torch.from_numpy(features_dict["mixed_wav"])
 
-        try:
-            features_dict.update({ "index": meta })
-        except:
-            features_dict.update({ "index": idx })
-        
+        # Finally, convert wav from numpy to torch.tensor
+        for k in ["target_wav", "mixed_wav"]:
+            if features_dict.get(k) is not None:
+                features_dict[k] = torch.from_numpy(features_dict[k])
+
         return features_dict
