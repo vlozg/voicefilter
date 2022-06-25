@@ -51,6 +51,9 @@ class VFGenerateDataset(VFDataset):
         if not np.isnan(audio_len):
             w1, w2 = w1[l1:l1+audio_len], w2[l2:l2+audio_len]
             w1_len, w2_len = w1.shape[0], w2.shape[0]
+            # Padding to ensure both of them have at least
+            w1 = np.pad(w1, (0, max(0, audio_len - w1.shape[0])), constant_values = 0)
+            w2 = np.pad(w2, (0, max(0, audio_len - w2.shape[0])), constant_values = 0)
         else:
             w1, w2 = w1[l1:], w2[l2:]
             w1_len, w2_len = w1.shape[0], w2.shape[0]
@@ -75,7 +78,9 @@ class VFGenerateDataset(VFDataset):
         return meta, features_dict
 
 
-def generate_sample(s1_target, s2, s1_dvec, sr, audio_len, min_dvec_len):
+def generate_sample(s1_target, s2, s1_dvec, sr, audio_len, min_dvec_len, seed=None):
+    np.random.seed(seed)
+
     d, _ = librosa.load(s1_dvec, sr=sr)
     w1, _ = librosa.load(s1_target, sr=sr)
     w2, _ = librosa.load(s2, sr=sr)
@@ -86,15 +91,13 @@ def generate_sample(s1_target, s2, s1_dvec, sr, audio_len, min_dvec_len):
     if d.shape[0] < min_dvec_len:
         return
 
-    # I think random segment length will be better, but let's follow the paper first
-    # fit audio to `hp.data.audio_len` seconds.
-    # if merged audio is shorter than `L`, discard it
-    if w1.shape[0] < audio_len or w2.shape[0] < audio_len:
-        return
+    # if w1.shape[0] < 0.5*sr or w2.shape[0] < 0.5*sr:
+    #     return
 
     # Random 2 segment
-    l1 = random.randint(0, w1.shape[0]-audio_len)
-    l2 = random.randint(0, w2.shape[0]-audio_len)
+
+    l1 = random.randint(0, max(0, w1.shape[0]-audio_len))
+    l2 = random.randint(0, max(0, w2.shape[0]-audio_len))
 
     # Post check if data sample is qualify
     if audio_len > 0:
@@ -103,8 +106,8 @@ def generate_sample(s1_target, s2, s1_dvec, sr, audio_len, min_dvec_len):
         w1, w2 = w1[l1:], w2[l2:]
 
     # Discard almost silent target audio sample (since it will cause error in torch_mir_eval)
-    if w1.sum() < 10e-5:
-        return
+    assert np.abs(w1).sum() > 10e-5, \
+        f"Target audio {s1_target} is almost silent, discard it"
 
     return {
         'clean_utterance_path': s1_target
@@ -115,7 +118,7 @@ def generate_sample(s1_target, s2, s1_dvec, sr, audio_len, min_dvec_len):
     }
     
 
-def generate_dataset_df(exp_config, dataset_config, speakers):
+def generate_dataset_df(exp_config, dataset_config, speakers, duplicate_tolerate=1000):
     config = exp_config
     sr = config.audio.sample_rate
 
@@ -138,6 +141,8 @@ def generate_dataset_df(exp_config, dataset_config, speakers):
     dataset_weight = dataset_config.get("weight")
 
     min_dvec_len = 1.1 * config.embedder.window * config.audio.hop_length
+
+    df = pd.DataFrame(columns={'clean_utterance_path', 'embedding_utterance_path', 'interference_utterance_path', 'clean_segment_start', 'interference_segment_start'})
 
     ###
     # Start multiprocess generate
@@ -163,10 +168,10 @@ def generate_dataset_df(exp_config, dataset_config, speakers):
             s1_dvec, s1_target = random.sample(spk1, 2)
             s2 = random.choice(spk2)
 
-            future_samples.append(executor.submit(generate_sample, s1_target, s2, s1_dvec, sr, audio_len, min_dvec_len))
+            future_samples.append(executor.submit(generate_sample, s1_target, s2, s1_dvec, sr, audio_len, min_dvec_len, i+counter))
             counter += 1
 
-            if counter == 100:
+            if counter == 10000:
                 for future in concurrent.futures.as_completed(future_samples):
                     try:
                         data = future.result()
@@ -185,16 +190,32 @@ def generate_dataset_df(exp_config, dataset_config, speakers):
 
                         if i==dataset_config.size: break
 
+                future_samples = []
                 counter = 0
 
-        pbar.close()
+                temp_df=pd.DataFrame(
+                    {'clean_utterance_path': s1_targets
+                    ,'embedding_utterance_path': s1_dvecs
+                    ,'interference_utterance_path':s2s
+                    ,'clean_segment_start':l1s
+                    ,'interference_segment_start':l2s})
 
-    df=pd.DataFrame(
-        {'clean_utterance_path': s1_targets
-        ,'embedding_utterance_path': s1_dvecs
-        ,'interference_utterance_path':s2s
-        ,'clean_segment_start':l1s
-        ,'interference_segment_start':l2s})
+                s1_targets = list()
+                s1_dvecs = list()
+                s2s = list()
+                l1s = list()
+                l2s = list()
+
+                df = pd.concat([df, temp_df], ignore_index=True)
+                df = df.drop_duplicates()
+
+                if (i - len(df)) > 0:
+                    pbar.update(i - len(df))
+                    pbar.display()
+                    print(f"Drop {i - len(df)} duplicated samples, currently sample number is {len(df)}")
+                    i = len(df)
+
+        pbar.close()
 
     df['segment_length'] = dataset_config.audio_len
     return df
