@@ -31,16 +31,22 @@ def gather_future(futures, default_value=None):
     return output_list
 
 
-def _metric_compute_1_sample(est_path, target_path, target_norm=1, sr=16000, skip_features=[]):
+def _metric_compute_1_sample(est_path, target, target_norm=1, sr=16000, skip_features=[], target_type="path"):
     est_wav, _ = librosa.load(est_path, sr=sr)
-    target_wav, _ = librosa.load(target_path, sr=sr)
+    if target_type == "path":
+        target_wav, _ = librosa.load(target, sr=sr)
 
-    le, lt = est_wav.shape[0], target_wav.shape[0]
+        le, lt = est_wav.shape[0], target_wav.shape[0]
 
-    est_wav = torch.from_numpy(est_wav).reshape(1, -1)
-    target_wav = np.pad(torch.from_numpy(target_wav)[:le], (0, max(0, le-lt)), constant_values=0)
-    target_wav = torch.from_numpy(target_wav).reshape(1, -1)
-    
+        target_wav = np.pad(target_wav[:le], (0, max(0, le-lt)), constant_values=0)
+        target_wav = torch.from_numpy(target_wav).reshape(1, -1)
+    elif target_type == "wav":
+        if type(target) is np.ndarray:
+            target_wav = torch.from_numpy(target).reshape(1, -1)
+        else:
+            target_wav = target.reshape(1, -1)
+        
+    est_wav = torch.from_numpy(est_wav).reshape(1, -1)    
     metrics = {}
 
     if "stoi" not in skip_features:
@@ -107,7 +113,7 @@ def metric_compute(config, testloader, logger, out_dir, skip_features=[]):
 
                 le, lt = est_wav.shape[0], target_wav.shape[0]
 
-                target_wav = np.pad(torch.from_numpy(target_wav)[:le], (0, max(0, le-lt)), constant_values=0) / norm
+                target_wav = np.pad(target_wav[:le], (0, max(0, le-lt)), constant_values=0) / norm
                 target_wav = torch.from_numpy(target_wav).reshape(1, -1)
 
                 ###
@@ -121,7 +127,7 @@ def metric_compute(config, testloader, logger, out_dir, skip_features=[]):
                 if target_wav is not None:
                     est_wav = torch.from_numpy(est_wav).reshape(1, -1)
 
-                    future_metrics[pexecutor.submit(_metric_compute_1_sample, est_path, target_path, norm,  config.audio.sample_rate, skip_features)] = idx
+                    future_metrics[pexecutor.submit(_metric_compute_1_sample, est_path, target_wav, norm,  config.audio.sample_rate, skip_features, "wav")] = idx
                     
                     if "sdr" not in skip_features:
                         est_wav = est_wav.to(device=device)
