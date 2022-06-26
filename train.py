@@ -17,8 +17,6 @@ if __name__ == '__main__':
                         help="remove old checkpoint and log. Default: false")
     parser.add_argument('-r', '--resume', type=str, default="backup",
                         help="resume from checkpoint. Default: backup")
-    parser.add_argument('-t', '--trainer_type', type=str, default="regular",
-                        help="type of trainer. Must be one of these ['regular', 'multi_reader']. Default: regular")
     args = parser.parse_args()
 
     config = HParam(args.config)
@@ -67,10 +65,12 @@ if __name__ == '__main__':
             config.experiment.train["resume_from_chkpt"] = True
 
 
-    if args.trainer_type == "regular":
+    if exp.get("trainer_type") == "regular" or exp.get("trainer_type") is None:
         from trainer.trainer import trainer
+    elif exp.get("trainer_type") == "multireader":
+        from trainer.multireader_trainer import trainer
     else:
-        raise NotImplementedError(f"{args.trainer_type} trainer not implemented")
+        raise NotImplementedError(f"{exp.get('trainer_type')} trainer not implemented")
 
 
     try:

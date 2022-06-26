@@ -1,13 +1,10 @@
 import os
 import time
-import shutil
 import logging
 import argparse
 import traceback
 
 from utils.hparams import HParam
-
-from trainer.lr_finder_trainer import lr_finder
 
 
 if __name__ == '__main__':
@@ -48,6 +45,13 @@ if __name__ == '__main__':
         ]
     )
     logger = logging.getLogger()
+
+    if exp.get("trainer_type") == "regular" or exp.get("trainer_type") is None:
+        from trainer.lr_finder_trainer import lr_finder
+    elif exp.get("trainer_type") == "multireader":
+        from trainer.lr_finder_multireader_trainer import lr_finder
+    else:
+        raise NotImplementedError(f"{exp.get('trainer_type')} trainer not implemented")
 
     try:
         lr_finder(config, chkpt_dir, None, logger, hp_str, init_lr=args.min_lr, end_lr=args.max_lr, num_iter=args.num_iter)
