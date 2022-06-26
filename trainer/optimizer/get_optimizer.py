@@ -22,7 +22,7 @@ def get_optimizer(config, model,chkpt=None):
 
     if chkpt is not None:
         optimizer.load_state_dict(chkpt['optimizer'])
-        step = chkpt['step']
+        step = chkpt['step']-1
     else:
         step = -1
 
