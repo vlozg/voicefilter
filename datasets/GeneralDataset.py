@@ -130,3 +130,38 @@ class VFDataset(Dataset):
                 features_dict[k] = torch.from_numpy(features_dict[k])
 
         return features_dict
+
+
+
+def preprocess(features_dict, audio):
+
+    dvec_mel = audio.get_mel(features_dict["dvec_wav"])
+    dvec_mel = torch.from_numpy(dvec_mel).float()
+    
+    features_dict.update({"dvec_mel": dvec_mel})
+
+    # magnitude spectrograms (old)
+    if features_dict.get("target_wav") is not None:
+        target_mag, target_phase = audio.wav2spec(features_dict["target_wav"])
+        features_dict.update({
+            "target_mag": torch.from_numpy(target_mag),
+            "target_phase": torch.from_numpy(target_phase)
+        })
+
+    mixed_mag, mixed_phase = audio.wav2spec(features_dict["mixed_wav"])
+    features_dict.update({
+        "mixed_mag": torch.from_numpy(mixed_mag),
+        "mixed_phase": torch.from_numpy(mixed_phase),
+    })
+
+    # STFT, must transpose to get [time, freq] format
+    if features_dict.get("target_wav") is not None:
+        features_dict.update({"target_stft": torch.from_numpy(audio.stft(features_dict["target_wav"]).T)})
+    features_dict.update({"mixed_stft": torch.from_numpy(audio.stft(features_dict["mixed_wav"]).T)})
+
+    # Finally, convert wav from numpy to torch.tensor
+    for k in ["target_wav", "mixed_wav"]:
+        if features_dict.get(k) is not None:
+            features_dict[k] = torch.from_numpy(features_dict[k])
+
+    return features_dict

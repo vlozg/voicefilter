@@ -4,6 +4,38 @@ from torch.nn.utils.rnn import pad_sequence
 
 from .get_dataset import get_dataset
 
+
+###
+#   Test collate function doesn't need to combine these tensor into 1 
+#   since we must left these audios in their original length (or else it would affect metric result)
+###
+def test_collate_fn(batch):
+    # List of dict to dict of list
+    features = {k: [dic[k] for dic in batch] for k in batch[0].keys()}
+    
+    if features.get("dvec_mel") is not None:
+        features["dvec"] = features.pop("dvec_mel")
+    
+    if features.get("dvec_tensor"):
+        features["dvec_tensor"] = torch.stack(features["dvec_tensor"], dim=0)
+    
+    # Add batch dimension to these features
+    to_be_unsqueezed = ["target_stft", "target_wav", "mixed_wav", "mixed_stft", "mixed_mag", "mixed_phase", "target_mag", "target_phase", "dvec_tensor"]
+    if features.get("dvec") is not None:
+        if features["dvec"][0] is not None:
+            to_be_unsqueezed.append("dvec")
+
+    for k in to_be_unsqueezed:
+        if features.get(k) is not None:
+            try:
+                features[k] = [f.unsqueeze(0) for f in features[k]]
+            except Exception as exc:
+                # print("Cannot unsqueeze ", exc)
+                pass
+
+    return features
+
+
 def create_dataloader(config, scheme, features="all"):
 
     def train_collate_fn(batch):
@@ -118,36 +150,6 @@ def create_dataloader(config, scheme, features="all"):
             "target_mag": target_mags, 
             "tagret_phase": target_phases
         })
-
-        return features
-
-    ###
-    #   Test collate function doesn't need to combine these tensor into 1 
-    #   since we must left these audios in their original length (or else it would affect metric result)
-    ###
-    def test_collate_fn(batch):
-        # List of dict to dict of list
-        features = {k: [dic[k] for dic in batch] for k in batch[0].keys()}
-        
-        if features.get("dvec_mel") is not None:
-            features["dvec"] = features.pop("dvec_mel")
-        
-        if features.get("dvec_tensor"):
-            features["dvec_tensor"] = torch.stack(features["dvec_tensor"], dim=0)
-        
-        # Add batch dimension to these features
-        to_be_unsqueezed = ["target_stft", "target_wav", "mixed_wav", "mixed_stft", "mixed_mag", "mixed_phase", "target_mag", "target_phase", "dvec_tensor"]
-        if features.get("dvec") is not None:
-            if features["dvec"][0] is not None:
-                to_be_unsqueezed.append("dvec")
-
-        for k in to_be_unsqueezed:
-            if features.get(k) is not None:
-                try:
-                    features[k] = [f.unsqueeze(0) for f in features[k]]
-                except Exception as exc:
-                    # print("Cannot unsqueeze ", exc)
-                    pass
 
         return features
 
